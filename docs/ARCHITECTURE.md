@@ -66,7 +66,30 @@ Control intake must eventually evaluate:
 - whether the artifact is eligible for surfacing or action
 - what human review, explanation, or escalation is required
 
-PR A only establishes this doctrine. It does not implement validators or runtime intake.
+PR B/C defines the first admission boundary around these expectations. It says malformed, stale, incomplete, or semantically invalid compute output must be rejected before governance begins. It does not implement validators or runtime intake.
+
+Admission is not approval. An admitted artifact is only eligible to inform Control-owned trust and disposition judgments.
+
+## Trust And Disposition Doctrine
+
+Control-owned trust is an operational interpretation of admitted compute evidence. It is not mathematical truth and must not rewrite compute semantics.
+
+Trust classes should remain explicit enough to distinguish evidence that is ready for ordinary workflow use, evidence that needs review, evidence that is degraded but still interpretable, evidence that is only useful as fallback context, and evidence that must be refused.
+
+Disposition is the Control-owned judgment about what happens next. The core disposition vocabulary includes:
+
+- promotion
+- fallback
+- refusal
+- degrade
+- escalation
+- hold for review
+
+These outcomes are workflow meanings. Compute may supply comparison results, residuals, repair artifacts, updates, backend admissibility evidence, or task results, but Control owns the governance decision about how those artifacts affect workflow state.
+
+Comparison-aware governance means Control interprets comparison evidence for workflow consequence. It does not recompute comparison semantics.
+
+Repair acceptance means Control governs whether repair evidence is admissible for workflow use, fallback, refusal, escalation, or review. It does not perform repair math.
 
 ## Workflow Truth Doctrine
 
