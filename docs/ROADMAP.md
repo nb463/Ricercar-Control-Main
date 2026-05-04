@@ -28,7 +28,7 @@ PR B/C replaces the previously separate admission and governance slices with one
 - provenance, replay, lineage, and validation expectations for admitted compute artifacts
 - rejection rules for malformed, stale, incomplete, or semantically inadmissible compute outputs
 - Control-owned trust classes and disposition outcomes
-- promotion, fallback, refusal, degrade, escalation, and hold-for-review governance
+- promotion, fallback, refusal, suppression, degrade, escalation, and hold-for-review governance
 - comparison-aware governance without moving comparison computation into Control
 - repair acceptance governance without moving repair math into Control
 - the rule that admitted evidence may influence workflow state only through explicit Control-owned disposition

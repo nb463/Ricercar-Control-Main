@@ -81,6 +81,7 @@ Disposition is the Control-owned judgment about what happens next. The core disp
 - promotion
 - fallback
 - refusal
+- suppression
 - degrade
 - escalation
 - hold for review
@@ -89,7 +90,7 @@ These outcomes are workflow meanings. Compute may supply comparison results, res
 
 Comparison-aware governance means Control interprets comparison evidence for workflow consequence. It does not recompute comparison semantics.
 
-Repair acceptance means Control governs whether repair evidence is admissible for workflow use, fallback, refusal, escalation, or review. It does not perform repair math.
+Repair acceptance means Control governs whether repair evidence is admissible for workflow use, fallback, refusal, suppression, escalation, or review. It does not perform repair math.
 
 ## Workflow Truth Doctrine
 
@@ -106,7 +107,7 @@ A compute artifact can say "this evidence supports a degraded but interpretable 
 3. Product action must not bypass Control when a decision-core state transition is required.
 4. Control must not reimplement kernel math that belongs in Compute.
 5. Products must not become the shared policy or disposition layer.
-6. Every promotion from artifact evidence to workflow state must be explicit, auditable, and explainable.
+6. Every movement from artifact evidence to workflow state must be explicit, auditable, and explainable.
 
 ## Why This Boundary Matters
 

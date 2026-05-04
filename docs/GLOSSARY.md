@@ -72,6 +72,10 @@ A Control-owned disposition that limits admitted evidence to secondary or fallba
 
 A Control-owned disposition that prevents admitted evidence from influencing workflow consequence.
 
+## Suppress
+
+A Control-owned disposition that intentionally withholds admitted evidence from ordinary surfacing, routing, or action flow while preserving an auditable governance outcome. Suppression does not mean the evidence is compute-invalid.
+
 ## Degrade
 
 A Control-owned disposition that carries admitted evidence forward with reduced operational standing, confidence, or allowed consequence.
@@ -82,7 +86,7 @@ A Control-owned disposition that routes admitted evidence to higher scrutiny, re
 
 ## Governance Outcome
 
-The explicit Control-owned result of applying disposition doctrine to admitted evidence. Core outcomes include promotion, fallback, refusal, degrade, escalation, and hold for review.
+The explicit Control-owned result of applying disposition doctrine to admitted evidence. Core outcomes include promotion, fallback, refusal, suppression, degrade, escalation, and hold for review.
 
 ## Truth Non-Bleed
 

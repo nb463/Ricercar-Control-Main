@@ -47,7 +47,7 @@ Operational convenience must not outrun provenance, replayability, lineage, acco
 
 ## Do Not Hide Governance Inside Compute Terms
 
-Control must not bury promotion, fallback, refusal, degrade, escalation, or review posture inside backend-specific or artifact-specific special cases.
+Control must not bury promotion, fallback, refusal, suppression, degrade, escalation, or review posture inside backend-specific or artifact-specific special cases.
 
 Comparison-aware governance must interpret comparison evidence. It must not reimplement comparison computation.
 

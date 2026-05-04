@@ -90,7 +90,8 @@ Initial governance outcomes are:
 
 - `Promote`: allow the evidence to advance a workflow state or candidate action.
 - `Fallback`: use the evidence only as fallback or secondary support.
-- `Refuse`: prevent the evidence from influencing workflow consequence.
+- `Refuse`: prevent evidence from influencing workflow consequence because it is not eligible under Control governance.
+- `Suppress`: intentionally withhold admitted evidence from ordinary surfacing, routing, or action flow while preserving an auditable Control-owned governance outcome.
 - `Degrade`: carry the evidence forward with reduced operational standing.
 - `Escalate`: route the evidence to a higher scrutiny or review posture.
 - `HoldForReview`: preserve the evidence without allowing consequence until review occurs.
@@ -101,7 +102,7 @@ Every governance outcome must be explicit, auditable, and explainable.
 
 Comparison results from Compute may inform Control trust and disposition.
 
-Control may use comparison evidence to decide whether to promote, degrade, fallback, refuse, escalate, or hold for review.
+Control may use comparison evidence to decide whether to promote, degrade, fallback, refuse, suppress, escalate, or hold for review.
 
 Control must not reimplement comparison computation or silently reinterpret comparison semantics. It governs the workflow meaning of comparison evidence.
 
@@ -109,7 +110,7 @@ Control must not reimplement comparison computation or silently reinterpret comp
 
 Repair approximation reports from Compute may inform Control trust and disposition.
 
-Control may accept repair evidence for ordinary workflow use, degrade it, limit it to fallback, refuse it, escalate it, or hold it for review.
+Control may accept repair evidence for ordinary workflow use, degrade it, limit it to fallback, refuse it, suppress it, escalate it, or hold it for review.
 
 Control must not reimplement repair math. Repair acceptance is governance over repair evidence, not the repair computation itself.
 
