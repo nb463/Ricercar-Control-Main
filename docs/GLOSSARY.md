@@ -84,6 +84,10 @@ A Control-owned disposition that carries admitted evidence forward with reduced 
 
 A Control-owned disposition that routes admitted evidence to higher scrutiny, review, or governance attention before consequence.
 
+## HoldForReview
+
+A Control-owned disposition that preserves admitted evidence without allowing workflow consequence until human or policy review occurs. It is not refusal; it is an explicit suspension pending review.
+
 ## Governance Outcome
 
 The explicit Control-owned result of applying disposition doctrine to admitted evidence. Core outcomes include promotion, fallback, refusal, suppression, degrade, escalation, and hold for review.

@@ -49,6 +49,8 @@ Control must reject artifacts before governance begins when they are:
 
 Rejection at admission is a Control-owned intake outcome. It is not a recomputation of compute semantics.
 
+The sequence is admission or rejection first, trust classification only for admitted evidence, and then an explicit disposition or governance outcome.
+
 ## Admission Is Not Approval
 
 An admitted artifact is eligible to inform governance. It is not automatically approved for workflow consequence.

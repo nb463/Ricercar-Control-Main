@@ -56,7 +56,7 @@ Products do not become the shared decision-core.
 
 Compute artifacts are evidence-bearing inputs to Control. They are not workflow truth by themselves.
 
-Control intake must eventually evaluate:
+Control intake must evaluate:
 
 - artifact identity and provenance
 - source system and workflow context
