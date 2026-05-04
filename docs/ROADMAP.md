@@ -1,6 +1,6 @@
 # Ricercar-Control Roadmap
 
-Ricercar-Control starts with constitutional boundaries before runtime machinery.
+Ricercar-Control starts after the current Ricercar-Compute artifact-boundary and local-cache/recompute tranches, with constitutional boundaries before runtime machinery.
 
 ## PR A: Constitutional Skeleton And Boundary Ownership
 

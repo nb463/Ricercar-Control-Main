@@ -12,6 +12,13 @@ The boundary is deliberate:
 - Control must not absorb kernel mathematics or reimplement compute semantics.
 - Product and app layers own concrete UX and business action surfaces.
 
+Start here:
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- [docs/ROADMAP.md](docs/ROADMAP.md)
+- [docs/ANTI_GOALS.md](docs/ANTI_GOALS.md)
+- [docs/GLOSSARY.md](docs/GLOSSARY.md)
+
 ## Business Thesis
 
 Ricercar exists to help humans see important structure earlier, more honestly, and with a clearer path back to evidence.

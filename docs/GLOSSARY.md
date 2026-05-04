@@ -28,6 +28,10 @@ The Control-owned process by which compute artifacts become eligible to inform w
 
 The Control-owned truth of decisions, dispositions, and workflow state transitions. It is informed by evidence but must remain distinct from raw compute artifact truth.
 
+## Disposition
+
+A Control-owned workflow judgment about how admitted compute evidence should be handled operationally, such as promotion, fallback, refusal, escalation, suppression, or review posture.
+
 ## Truth Non-Bleed
 
 The doctrine that compute truth, workflow truth, and product action must remain distinct unless a boundary crossing is explicit, auditable, and explainable.
