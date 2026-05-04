@@ -1,6 +1,6 @@
 # Ricercar-Control
 
-Ricercar-Control is the decision-core and workflow-truth layer for Ricercar systems.
+Ricercar-Control is the decision plane, Core OS, and workflow-truth layer for Ricercar systems.
 
 It is the better half of Ricercar-Compute, but it is not a second compute kernel. Ricercar-Compute owns derived compute truth: witnessed interactions, lawful derived artifacts, stable structure, observables, residuals, repair evidence, and replayable semantic lineage. Ricercar-Control owns the operational truth that decides what those artifacts mean for people, products, and workflows.
 
@@ -18,6 +18,7 @@ Start here:
 - [docs/ROADMAP.md](docs/ROADMAP.md)
 - [docs/ANTI_GOALS.md](docs/ANTI_GOALS.md)
 - [docs/GLOSSARY.md](docs/GLOSSARY.md)
+- [docs/CONTROL_ADMISSION_AND_DISPOSITION_BOUNDARY_V0.md](docs/CONTROL_ADMISSION_AND_DISPOSITION_BOUNDARY_V0.md)
 
 ## Business Thesis
 
@@ -85,9 +86,9 @@ This boundary is not a weakness. It is a trust-preserving feature.
 
 ## Current Scope
 
-PR A establishes the constitutional skeleton for Ricercar-Control. It is intentionally docs-first.
+PR A establishes the constitutional skeleton for Ricercar-Control. PR B/C adds the first admission and disposition governance boundary. Both are intentionally docs-first.
 
-This repo does not yet implement runtime orchestration, intake validators, policy engines, scheduling, distributed systems, or product workflows. Those must be added only after the ownership boundaries are clear enough to prevent compute truth, workflow truth, and product action from bleeding into one another.
+This repo does not yet implement runtime orchestration, intake validators, policy engines, scheduling, distributed systems, or product workflows. The admission and governance boundary records what those later systems must preserve; it does not claim that machinery already exists.
 
 ## Documents
 
@@ -95,3 +96,4 @@ This repo does not yet implement runtime orchestration, intake validators, polic
 - [Roadmap](docs/ROADMAP.md)
 - [Anti-goals](docs/ANTI_GOALS.md)
 - [Glossary](docs/GLOSSARY.md)
+- [Control Admission And Disposition Boundary v0](docs/CONTROL_ADMISSION_AND_DISPOSITION_BOUNDARY_V0.md)
