@@ -1,7 +1,10 @@
 use crate::admission::{
     admit_evidence, AdmissionEnvelope, AdmissionOutcome, AdmissionRecord, AdmissionRejectionReason,
 };
-use crate::evidence::{ComputeEvidenceKind, ComputeEvidenceSummary};
+use crate::evidence::{
+    CompatibilityClassification, CompatibilityGateSummary, ComputeEvidenceKind,
+    ComputeEvidenceSummary,
+};
 use crate::governance::{
     disposition_rank, govern_admission, trust_rank, Disposition, GovernanceReason,
     GovernanceRecord, TrustClass,
@@ -19,6 +22,7 @@ pub enum IncidentKind {
     IntakeRejected,
     EvidenceDegraded,
     PluginIncompatible,
+    BackendInadmissible,
     CacheNotReusable,
     BoundaryDrift,
     ReleaseReadinessBlocked,
@@ -251,8 +255,8 @@ fn fragments_for(
             severity: ExplanationSeverity::Blocking,
             evidence_key: envelope.evidence_key.clone(),
             summary: format!(
-                "evidence rejected at admission for {:?}",
-                admission.rejection_reasons
+                "evidence rejected at admission for {}",
+                join_admission_rejection_reason_ids(&admission.rejection_reasons)
             ),
         });
         return fragments;
@@ -293,7 +297,7 @@ fn fragment_text(
                 .to_string(),
         ),
         GovernanceReason::BackendInadmissible => (
-            IncidentKind::BackendRuntimeNeedsParity,
+            IncidentKind::BackendInadmissible,
             ExplanationSeverity::Blocking,
             "backend admissibility evidence is valid but inadmissible for this target".to_string(),
         ),
@@ -324,17 +328,14 @@ fn fragment_text(
             "compatibility gate reports no boundary drift".to_string(),
         ),
         GovernanceReason::CompatibilityGateBlocking => {
-            let detail = match &envelope.summary {
-                ComputeEvidenceSummary::ContractCompatibilityGate(summary) => {
-                    format!(
-                        "compatibility gate is {:?} with reasons {:?}",
-                        summary.classification, summary.reasons
-                    )
-                }
-                _ => "compatibility gate is blocking".to_string(),
-            };
+            let detail = compatibility_gate_summary(&envelope.summary, true);
             (IncidentKind::BoundaryDrift, ExplanationSeverity::Blocking, detail)
         }
+        GovernanceReason::CompatibilityGateNeedsReview => (
+            IncidentKind::BoundaryDrift,
+            ExplanationSeverity::Warning,
+            compatibility_gate_summary(&envelope.summary, false),
+        ),
         GovernanceReason::ReadinessNeedsReview => (
             IncidentKind::HumanReviewRequired,
             ExplanationSeverity::Warning,
@@ -428,6 +429,63 @@ fn surfacing_action_for(disposition: Disposition) -> SurfacingAction {
         Disposition::Escalate => SurfacingAction::Escalate,
         Disposition::HoldForReview => SurfacingAction::HoldForReview,
     }
+}
+
+fn join_admission_rejection_reason_ids(reasons: &[AdmissionRejectionReason]) -> String {
+    reasons
+        .iter()
+        .copied()
+        .map(admission_rejection_reason_id)
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
+fn admission_rejection_reason_id(reason: AdmissionRejectionReason) -> &'static str {
+    match reason {
+        AdmissionRejectionReason::MissingEvidenceKey => "missing_evidence_key",
+        AdmissionRejectionReason::EvidenceKindMismatch => "evidence_kind_mismatch",
+        AdmissionRejectionReason::MissingArtifactIdentity => "missing_artifact_identity",
+        AdmissionRejectionReason::MissingSourceSystem => "missing_source_system",
+        AdmissionRejectionReason::MissingWorkflowContext => "missing_workflow_context",
+        AdmissionRejectionReason::MissingReplayReference => "missing_replay_reference",
+        AdmissionRejectionReason::MissingLineage => "missing_lineage",
+        AdmissionRejectionReason::MalformedContentHash => "malformed_content_hash",
+        AdmissionRejectionReason::ComputeValidationFailed => "compute_validation_failed",
+        AdmissionRejectionReason::StaleDigest => "stale_digest",
+        AdmissionRejectionReason::UnknownValidationPosture => "unknown_validation_posture",
+        AdmissionRejectionReason::SemanticallyInadmissible => "semantically_inadmissible",
+        AdmissionRejectionReason::CacheDependencyMissing => "cache_dependency_missing",
+        AdmissionRejectionReason::DependencyContentDrift => "dependency_content_drift",
+    }
+}
+
+fn compatibility_classification_id(classification: CompatibilityClassification) -> &'static str {
+    match classification {
+        CompatibilityClassification::Additive => "additive",
+        CompatibilityClassification::CompatibleTightening => "compatible_tightening",
+        CompatibilityClassification::Breaking => "breaking",
+        CompatibilityClassification::InternalOnly => "internal_only",
+    }
+}
+
+fn compatibility_gate_summary(summary: &ComputeEvidenceSummary, blocking: bool) -> String {
+    match summary {
+        ComputeEvidenceSummary::ContractCompatibilityGate(summary) => {
+            format_compatibility_gate_summary(summary, blocking)
+        }
+        _ if blocking => "compatibility gate is blocking".to_string(),
+        _ => "compatibility gate needs review".to_string(),
+    }
+}
+
+fn format_compatibility_gate_summary(summary: &CompatibilityGateSummary, blocking: bool) -> String {
+    let posture = if blocking { "blocking" } else { "needs_review" };
+    format!(
+        "compatibility gate {}: classification={} reasons={}",
+        posture,
+        compatibility_classification_id(summary.classification),
+        summary.reasons.join(",")
+    )
 }
 
 fn diagram_hint_for(

@@ -41,6 +41,7 @@ pub enum GovernanceReason {
     CacheRetired,
     CompatibilityGateClean,
     CompatibilityGateBlocking,
+    CompatibilityGateNeedsReview,
     ReadinessNeedsReview,
     ReadinessBlocked,
     BackendRuntimeReady,
@@ -120,16 +121,19 @@ pub fn govern_admission(
             },
         },
         ComputeEvidenceSummary::ContractCompatibilityGate(summary) => {
-            // Any non-internal boundary drift stays review-visible in Control, even
-            // when Compute reports the gate as non-blocking.
-            if summary.gate_blocking
-                || summary.classification != CompatibilityClassification::InternalOnly
-            {
+            if summary.gate_blocking {
                 GovernanceRecord {
                     evidence_key: envelope.evidence_key.clone(),
                     trust_class: TrustClass::ReviewRequired,
                     disposition: Disposition::Escalate,
                     reasons: vec![GovernanceReason::CompatibilityGateBlocking],
+                }
+            } else if summary.classification != CompatibilityClassification::InternalOnly {
+                GovernanceRecord {
+                    evidence_key: envelope.evidence_key.clone(),
+                    trust_class: TrustClass::ReviewRequired,
+                    disposition: Disposition::HoldForReview,
+                    reasons: vec![GovernanceReason::CompatibilityGateNeedsReview],
                 }
             } else {
                 ready_record(envelope, GovernanceReason::CompatibilityGateClean)

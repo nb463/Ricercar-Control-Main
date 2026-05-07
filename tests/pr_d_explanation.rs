@@ -152,6 +152,10 @@ fn plugin_incompatibility_is_admitted_then_refused_by_control() {
         directive.audience == SurfacingAudience::Operator
             && directive.action == SurfacingAction::Refuse
     }));
+    assert!(bundle.surfacing.iter().any(|directive| {
+        directive.audience == SurfacingAudience::DownstreamSystem
+            && directive.action == SurfacingAction::Refuse
+    }));
 }
 
 #[test]
@@ -332,7 +336,7 @@ fn non_comparable_evidence_is_admitted_then_held_for_review() {
 }
 
 #[test]
-fn non_blocking_additive_compatibility_gate_still_escalates() {
+fn non_blocking_additive_compatibility_gate_holds_for_review() {
     let envelope = envelope(
         "evidence/compatibility/additive",
         ComputeEvidenceKind::ContractCompatibilityGate,
@@ -351,10 +355,10 @@ fn non_blocking_additive_compatibility_gate_still_escalates() {
     let bundle = assemble_explanation_bundle(&trace).expect("bundle should assemble");
 
     assert_eq!(bundle.trust_class, TrustClass::ReviewRequired);
-    assert_eq!(bundle.disposition, Disposition::Escalate);
+    assert_eq!(bundle.disposition, Disposition::HoldForReview);
     assert!(bundle.fragments.iter().any(|fragment| {
         fragment.incident_kind == IncidentKind::BoundaryDrift
-            && fragment.summary.contains("public_boundary_additive")
+            && fragment.summary.contains("needs_review")
     }));
 }
 
@@ -519,6 +523,10 @@ fn full_ready_evidence_chain_promotes_with_auditable_bundle() {
         record
             .reasons
             .contains(&GovernanceReason::BackendAdmissible)
+    }));
+    assert!(bundle.surfacing.iter().any(|directive| {
+        directive.audience == SurfacingAudience::DownstreamSystem
+            && directive.action == SurfacingAction::Promote
     }));
     assert!(bundle
         .diagram_hint

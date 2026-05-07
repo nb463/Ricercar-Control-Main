@@ -111,7 +111,7 @@ The surfacing grammar is not product UX and not a runtime router. It tells downs
 
 The evidence chain remains explicit:
 
-1. backend capability
+1. backend admissibility or capability
 2. plugin compatibility
 3. cache/recompute posture
 4. compatibility verdict
