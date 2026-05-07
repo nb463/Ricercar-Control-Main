@@ -34,7 +34,11 @@ The Control-owned boundary judgment that a compute artifact has enough identity,
 
 ## Admission Envelope
 
-A future Control-side wrapper around admitted compute evidence, workflow context, provenance, replay references, validation posture, and intake outcome. PR B/C defines the doctrine but does not implement the envelope.
+A Control-side wrapper around compute evidence, workflow context, provenance, replay references, validation posture, semantic posture, and typed evidence summary. PR D introduces the first narrow implementation.
+
+## Admission Record
+
+The Control-owned record of whether an admission envelope was admitted or rejected, including explicit rejection reasons when intake fails.
 
 ## Provenance
 
@@ -91,6 +95,26 @@ A Control-owned disposition that preserves admitted evidence without allowing wo
 ## Governance Outcome
 
 The explicit Control-owned result of applying disposition doctrine to admitted evidence. Core outcomes include promotion, fallback, refusal, suppression, degrade, escalation, and hold for review.
+
+## Control Trace
+
+A workflow-context-scoped collection of admission envelopes assembled for Control interpretation. PR D keeps traces local and deterministic; they are not schedulers or orchestration state.
+
+## Explanation Bundle
+
+A workflow-auditable Control output that records admission results, trust class, disposition, incident fragments, surfacing directives, and a compact audit summary.
+
+## Surfacing Grammar
+
+The Control-owned vocabulary for how an explanation bundle should be exposed to operators, downstream systems, and audit consumers. It is not product UX and does not perform routing.
+
+## Incident Taxonomy
+
+The typed set of explanation incident kinds used to distinguish intake rejection, degraded evidence, plugin incompatibility, cache posture, boundary drift, readiness blocking, backend parity review, and ready evidence.
+
+## Diagram Hint
+
+A lightweight optional explanation surface that names wires, boxes, traces, contractions, and splits for tensor/string-diagram-style narration. It is explanatory only and does not add compute semantics.
 
 ## Truth Non-Bleed
 

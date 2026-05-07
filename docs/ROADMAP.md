@@ -20,7 +20,7 @@ PR A is docs-first and intentionally avoids implementation.
 
 ## PR B/C: Control Admission And Disposition Governance Boundary
 
-Status: current slice.
+Status: landed.
 
 PR B/C replaces the previously separate admission and governance slices with one merged constitutional tranche. It defines:
 
@@ -35,15 +35,30 @@ PR B/C replaces the previously separate admission and governance slices with one
 
 PR B/C remains docs-first. It does not add a runtime, validator implementation, policy engine, scheduler, artifact store, orchestration service, or product workflow.
 
+## PR D: Explanation Assembly And Surfacing Grammar v0
+
+Status: current slice.
+
+PR D adds the first narrow runnable Control implementation:
+
+- Control-side admission envelopes and admission records
+- admission outcomes and rejection reasons
+- trust class assignment and disposition semantics for admitted evidence
+- compute-evidence summary adapters for plugin compatibility, cache policy, compatibility gates, release readiness, backend admissibility, and backend runtime posture
+- trace-to-explanation assembly
+- workflow-auditable explanation bundles
+- operator, downstream-system, and audit surfacing directives
+- lightweight diagram hints for explanation surfaces only
+
+PR D does not add scheduling, orchestration, product UX, deployment policy, org-wide governance, compute kernels, or recomputation logic.
+
 ## Near-Term Direction
 
-Future slices should proceed only after PR A and PR B/C land the ownership, admission, and governance model.
+Future slices should proceed only after PR A, PR B/C, and PR D preserve the ownership, admission, governance, and explanation model.
 
 Likely next areas:
 
-- concrete artifact intake envelopes and eligibility records
-- validation/admission record implementation
-- explanation and surfacing posture
+- orchestration and routing runtime
 - workflow audit records
 - policy hooks that remain Control-owned and compute-informed
 
@@ -51,7 +66,7 @@ These should be added in small slices. Each slice must preserve the split betwee
 
 ## Later Work
 
-Later work may include orchestration, scheduling, runtime services, product integrations, and operational hardening. Those are not PR A or PR B/C.
+Later work may include orchestration, scheduling, broader runtime services, product integrations, and operational hardening. Those are not PR A, PR B/C, or PR D.
 
 The roadmap should not pull compute-kernel logic into Control or business workflow state into Compute.
 

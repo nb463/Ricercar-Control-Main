@@ -55,18 +55,15 @@ Repair acceptance must govern repair evidence. It must not reimplement repair ma
 
 ## Do Not Add Runtime Before Doctrine
 
-The early boundary PRs must not add:
+The constitutional boundary PRs must not add runtime machinery before ownership is clear. After PR A and PR B/C, PR D may add a small typed implementation of admission, governance, and explanation assembly, but it must still avoid:
 
-- runtime implementation
 - orchestration code
-- intake validators
-- policy engines
+- hidden policy engines
 - schedulers
 - distributed systems
-- envelope implementation
 - compute-kernel logic
 
-Those may become appropriate after the constitutional boundary is clear.
+Broader runtime services may become appropriate after the Control boundary stays explicit and auditable.
 
 ## Do Not Hide Ambiguity
 

@@ -70,6 +70,8 @@ PR B/C defines the first admission boundary around these expectations. It says m
 
 Admission is not approval. An admitted artifact is only eligible to inform Control-owned trust and disposition judgments.
 
+PR D adds the first narrow implementation of this boundary as typed admission envelopes and admission records. It consumes compute evidence summaries and validation posture supplied by Compute; it does not recompute artifact semantics.
+
 ## Trust And Disposition Doctrine
 
 Control-owned trust is an operational interpretation of admitted compute evidence. It is not mathematical truth and must not rewrite compute semantics.
@@ -91,6 +93,31 @@ These outcomes are workflow meanings. Compute may supply comparison results, res
 Comparison-aware governance means Control interprets comparison evidence for workflow consequence. It does not recompute comparison semantics.
 
 Repair acceptance means Control governs whether repair evidence is admissible for workflow use, fallback, refusal, suppression, escalation, or review. It does not perform repair math.
+
+## Explanation And Surfacing Doctrine
+
+Control explanations are workflow-auditable assemblies over admitted or rejected evidence.
+
+PR D introduces explanation bundles that preserve:
+
+- admission outcome and rejection reasons
+- Control-owned trust class
+- Control-owned disposition
+- incident/debug taxonomy
+- operator, downstream-system, and audit surfacing directives
+- a lightweight diagram hint vocabulary for explanation surfaces only
+
+The surfacing grammar is not product UX and not a runtime router. It tells downstream systems how Control has interpreted evidence for workflow posture. Products still decide concrete screens, labels, and business actions.
+
+The evidence chain remains explicit:
+
+1. backend admissibility or capability
+2. plugin compatibility
+3. cache/recompute posture
+4. compatibility verdict
+5. release/readiness posture
+
+Backend runtime and CUDA-transition evidence are interpreted as Control posture only after Compute emits typed compatibility/readiness signals. CPU/reference semantics remain the canonical oracle. Runtime memory layout and transfer details remain backend-local implementation evidence; they do not become public compute artifact truth.
 
 ## Workflow Truth Doctrine
 

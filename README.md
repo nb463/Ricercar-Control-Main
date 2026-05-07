@@ -19,6 +19,7 @@ Start here:
 - [docs/ANTI_GOALS.md](docs/ANTI_GOALS.md)
 - [docs/GLOSSARY.md](docs/GLOSSARY.md)
 - [docs/CONTROL_ADMISSION_AND_DISPOSITION_BOUNDARY_V0.md](docs/CONTROL_ADMISSION_AND_DISPOSITION_BOUNDARY_V0.md)
+- [docs/CONTROL_EXPLANATION_AND_SURFACING_GRAMMAR_V0.md](docs/CONTROL_EXPLANATION_AND_SURFACING_GRAMMAR_V0.md)
 
 ## Business Thesis
 
@@ -88,7 +89,7 @@ This boundary is not a weakness. It is a trust-preserving feature.
 
 PR A establishes the constitutional skeleton for Ricercar-Control. PR B/C adds the first admission and disposition governance boundary. Both are intentionally docs-first.
 
-This repo does not yet implement runtime orchestration, intake validators, policy engines, scheduling, distributed systems, or product workflows. The admission and governance boundary records what those later systems must preserve; it does not claim that machinery already exists.
+PR D adds the first narrow Rust implementation for Control-side admission records, trust/disposition assignment, and explanation/surfacing bundles. It is runnable and testable, but it is not an orchestration runtime, scheduler, global policy engine, distributed system, or product workflow.
 
 ## Documents
 
@@ -97,3 +98,4 @@ This repo does not yet implement runtime orchestration, intake validators, polic
 - [Anti-goals](docs/ANTI_GOALS.md)
 - [Glossary](docs/GLOSSARY.md)
 - [Control Admission And Disposition Boundary v0](docs/CONTROL_ADMISSION_AND_DISPOSITION_BOUNDARY_V0.md)
+- [Control Explanation And Surfacing Grammar v0](docs/CONTROL_EXPLANATION_AND_SURFACING_GRAMMAR_V0.md)
