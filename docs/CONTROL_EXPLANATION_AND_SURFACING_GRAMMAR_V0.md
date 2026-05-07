@@ -8,7 +8,7 @@ This is not a scheduler, orchestrator, product UI, deployment policy, or compute
 
 Ricercar-Compute remains the source of compute truth. It produces typed evidence such as plugin compatibility, cache posture, compatibility-gate verdicts, release/readiness posture, backend admissibility, and backend runtime or memory-layout posture.
 
-Ricercar-Control consumes those summaries. It does not recompute plugin compatibility, cache freshness, boundary compatibility, release readiness, backend parity, or CUDA memory-layout semantics.
+Ricercar-Control consumes those summaries. It does not recompute plugin compatibility, cache freshness, boundary compatibility, release readiness, backend parity, or CUDA memory-layout semantics. For Compute PR36 release readiness, Control preserves the top-level readiness posture and stable reason IDs; it does not reinterpret nested `BoundaryReadinessSummaryV0` as workflow truth.
 
 Products consume Control posture and explanation. They still own concrete screens, workflow-specific labels, and business actions.
 
@@ -70,7 +70,7 @@ PR D keeps the evidence chain explicit:
 2. plugin compatibility
 3. cache or recompute posture
 4. compatibility-gate verdict
-5. release or boundary readiness posture
+5. release-readiness posture and stable reason IDs
 
 Control can explain how this chain affects workflow posture without inferring compute truth from logs or prose.
 

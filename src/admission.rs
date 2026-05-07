@@ -130,6 +130,17 @@ pub fn admit_evidence(envelope: &AdmissionEnvelope) -> AdmissionRecord {
         }
     }
 
+    if let ComputeEvidenceSummary::ReleaseReadiness(summary) = &envelope.summary {
+        if summary.reasons.is_empty()
+            || summary
+                .reasons
+                .iter()
+                .any(|reason| reason.trim().is_empty())
+        {
+            reasons.push(AdmissionRejectionReason::SemanticallyInadmissible);
+        }
+    }
+
     let outcome = if reasons.is_empty() {
         AdmissionOutcome::Admitted
     } else {

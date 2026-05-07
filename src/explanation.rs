@@ -339,12 +339,12 @@ fn fragment_text(
         GovernanceReason::ReadinessNeedsReview => (
             IncidentKind::HumanReviewRequired,
             ExplanationSeverity::Warning,
-            "release or boundary readiness needs review before workflow consequence".to_string(),
+            release_readiness_summary(&envelope.summary, "needs review before workflow consequence"),
         ),
         GovernanceReason::ReadinessBlocked => (
             IncidentKind::ReleaseReadinessBlocked,
             ExplanationSeverity::Blocking,
-            "release or boundary readiness is blocked".to_string(),
+            release_readiness_summary(&envelope.summary, "is blocked"),
         ),
         GovernanceReason::BackendRuntimeReady => (
             IncidentKind::EvidenceReady,
@@ -486,6 +486,18 @@ fn format_compatibility_gate_summary(summary: &CompatibilityGateSummary, blockin
         compatibility_classification_id(summary.classification),
         summary.reasons.join(",")
     )
+}
+
+fn release_readiness_summary(summary: &ComputeEvidenceSummary, posture: &str) -> String {
+    match summary {
+        ComputeEvidenceSummary::ReleaseReadiness(summary) => {
+            format!(
+                "release readiness {posture} ({})",
+                summary.reasons.join(",")
+            )
+        }
+        _ => format!("release readiness {posture}"),
+    }
 }
 
 fn diagram_hint_for(

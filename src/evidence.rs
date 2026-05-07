@@ -190,7 +190,7 @@ pub enum EvidenceReadiness {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReleaseReadinessSummary {
     pub readiness: EvidenceReadiness,
-    pub boundary_readiness_signal: String,
+    pub reasons: Vec<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
