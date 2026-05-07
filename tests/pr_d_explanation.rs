@@ -231,6 +231,65 @@ fn backend_runtime_posture_holds_cuda_transition_for_parity_review() {
 }
 
 #[test]
+fn generic_artifact_does_not_auto_promote() {
+    let envelope = envelope(
+        "evidence/generic/report",
+        ComputeEvidenceKind::ComputeArtifact,
+        ComputeSemanticStatus::Lawful,
+        ComputeEvidenceSummary::GenericArtifact {
+            artifact_family: "observable_report".to_string(),
+        },
+    );
+    let trace = ControlTrace::new("trace/generic-review", "workflow/triage", vec![envelope])
+        .expect("trace should be valid");
+
+    let bundle = assemble_explanation_bundle(&trace).expect("bundle should assemble");
+
+    assert_eq!(
+        bundle.admission_records[0].outcome,
+        AdmissionOutcome::Admitted
+    );
+    assert_eq!(bundle.trust_class, TrustClass::ReviewRequired);
+    assert_eq!(bundle.disposition, Disposition::HoldForReview);
+    assert!(bundle
+        .fragments
+        .iter()
+        .any(|fragment| fragment.incident_kind == IncidentKind::HumanReviewRequired));
+}
+
+#[test]
+fn non_comparable_evidence_is_admitted_then_held_for_review() {
+    let envelope = envelope(
+        "evidence/generic/non-comparable",
+        ComputeEvidenceKind::ComputeArtifact,
+        ComputeSemanticStatus::NonComparable,
+        ComputeEvidenceSummary::GenericArtifact {
+            artifact_family: "comparison_result".to_string(),
+        },
+    );
+    let trace = ControlTrace::new(
+        "trace/non-comparable-review",
+        "workflow/triage",
+        vec![envelope],
+    )
+    .expect("trace should be valid");
+
+    let bundle = assemble_explanation_bundle(&trace).expect("bundle should assemble");
+
+    assert_eq!(
+        bundle.admission_records[0].outcome,
+        AdmissionOutcome::Admitted
+    );
+    assert!(bundle.admission_records[0].rejection_reasons.is_empty());
+    assert_eq!(bundle.trust_class, TrustClass::ReviewRequired);
+    assert_eq!(bundle.disposition, Disposition::HoldForReview);
+    assert!(bundle.fragments.iter().any(|fragment| {
+        fragment.incident_kind == IncidentKind::HumanReviewRequired
+            && fragment.summary.contains("non-comparable")
+    }));
+}
+
+#[test]
 fn full_ready_evidence_chain_promotes_with_auditable_bundle() {
     let envelopes = vec![
         envelope(

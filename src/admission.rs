@@ -110,10 +110,7 @@ pub fn admit_evidence(envelope: &AdmissionEnvelope) -> AdmissionRecord {
         }
     }
 
-    if matches!(
-        envelope.semantic_status,
-        ComputeSemanticStatus::Unknown | ComputeSemanticStatus::NonComparable
-    ) {
+    if matches!(envelope.semantic_status, ComputeSemanticStatus::Unknown) {
         reasons.push(AdmissionRejectionReason::SemanticallyInadmissible);
     }
 

@@ -44,6 +44,8 @@ pub enum GovernanceReason {
     ReadinessBlocked,
     BackendRuntimeReady,
     BackendRuntimeNeedsParity,
+    GenericArtifactNeedsReview,
+    EvidenceNonComparable,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -165,9 +167,12 @@ pub fn govern_admission(
                 ready_record(envelope, GovernanceReason::BackendRuntimeReady)
             }
         }
-        ComputeEvidenceSummary::GenericArtifact { .. } => {
-            ready_record(envelope, GovernanceReason::EvidenceReady)
-        }
+        ComputeEvidenceSummary::GenericArtifact { .. } => GovernanceRecord {
+            evidence_key: envelope.evidence_key.clone(),
+            trust_class: TrustClass::ReviewRequired,
+            disposition: Disposition::HoldForReview,
+            reasons: vec![GovernanceReason::GenericArtifactNeedsReview],
+        },
     };
 
     match envelope.semantic_status {
@@ -188,7 +193,15 @@ pub fn govern_admission(
                 GovernanceReason::ComputeRefused,
             );
         }
-        ComputeSemanticStatus::NonComparable | ComputeSemanticStatus::Unknown => {}
+        ComputeSemanticStatus::NonComparable => {
+            soften_record(
+                &mut record,
+                TrustClass::ReviewRequired,
+                Disposition::HoldForReview,
+                GovernanceReason::EvidenceNonComparable,
+            );
+        }
+        ComputeSemanticStatus::Unknown => {}
     }
 
     record

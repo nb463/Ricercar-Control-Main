@@ -287,6 +287,17 @@ fn fragment_text(
             "backend runtime posture needs parity, layout, precision, or canonicalization review"
                 .to_string(),
         ),
+        GovernanceReason::GenericArtifactNeedsReview => (
+            IncidentKind::HumanReviewRequired,
+            ExplanationSeverity::Warning,
+            "generic compute artifact is admitted but requires Control review before workflow consequence"
+                .to_string(),
+        ),
+        GovernanceReason::EvidenceNonComparable => (
+            IncidentKind::HumanReviewRequired,
+            ExplanationSeverity::Warning,
+            "compute evidence is non-comparable and requires explicit Control review".to_string(),
+        ),
         GovernanceReason::EvidenceReady => (
             IncidentKind::EvidenceReady,
             ExplanationSeverity::Info,
