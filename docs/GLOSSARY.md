@@ -100,6 +100,30 @@ The explicit Control-owned result of applying disposition doctrine to admitted e
 
 A workflow-context-scoped collection of admission envelopes assembled for Control interpretation. PR D keeps traces local and deterministic; they are not schedulers or orchestration state.
 
+## Queueable Work Item
+
+A Control-owned routing input that groups admitted-or-admittable compute evidence with a workflow context, routing intent, and queue priority.
+
+## Routing Intent
+
+A Control-owned declaration of the requested routing posture, such as normal execution, accelerated execution, fallback execution, recompute, suppression, or review.
+
+## Routing Decision
+
+The Control-owned decision that maps admitted evidence and routing intent to a concrete execution command with replayable routing reasons.
+
+## Execution Command
+
+A Control-owned routing consequence such as promote for execution, hold for review, escalate, refuse execution, trigger recompute, route to fallback, or suppress ordinary routing.
+
+## Orchestration Audit Record
+
+The workflow-auditable record of a routing decision, execution command, orchestration state, explanation bundle, and routing explanation payload.
+
+## Routing Explanation Payload
+
+The structured explanation emitted for a consequential routing act. It preserves admitted and rejected evidence keys, Compute-owned reason ids, Control-owned routing reasons, and an audit reference.
+
 ## Explanation Bundle
 
 A workflow-auditable Control output that records admission results, trust class, disposition, incident fragments, surfacing directives, and a compact audit summary.

@@ -52,13 +52,27 @@ PR D adds the first narrow runnable Control implementation:
 
 PR D does not add scheduling, orchestration, product UX, deployment policy, org-wide governance, compute kernels, or recomputation logic.
 
+## PR E: Orchestration, Scheduling, And Routing Runtime v0
+
+Status: current slice.
+
+PR E adds the first narrow operational Control runtime:
+
+- queueable work items and routing intents
+- routing decisions and execution commands
+- orchestration state and audit records
+- structured routing explanation payloads for every consequential act
+- typed consumption of Compute cache posture, compatibility-gate posture, release readiness, backend admissibility, backend runtime posture, and plugin compatibility evidence
+- fail-closed accelerated-routing doctrine when admissibility, readiness, or compatibility evidence is missing or blocked
+
+PR E does not add distributed scheduling, product UX, deployment policy, release governance, compute kernels, recomputation logic, or full PR37 backend/layout governance.
+
 ## Near-Term Direction
 
-Future slices should proceed only after PR A, PR B/C, and PR D preserve the ownership, admission, governance, and explanation model.
+Future slices should proceed only after PR A, PR B/C, PR D, and PR E preserve the ownership, admission, governance, explanation, and routing model.
 
 Likely next areas:
 
-- orchestration and routing runtime
 - workflow audit records
 - policy hooks that remain Control-owned and compute-informed
 

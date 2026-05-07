@@ -119,6 +119,24 @@ The evidence chain remains explicit:
 
 Backend runtime and CUDA-transition evidence are interpreted as Control posture only after Compute emits typed compatibility/readiness signals. CPU/reference semantics remain the canonical oracle. Runtime memory layout and transfer details remain backend-local implementation evidence; they do not become public compute artifact truth.
 
+## Orchestration And Routing Doctrine
+
+PR E turns admitted compute evidence into explicit Control-owned routing consequence.
+
+Control routing consumes typed Compute summaries for cache posture, compatibility gates, release readiness, backend admissibility, backend runtime posture, and plugin compatibility. It does not recompute those semantics locally.
+
+The Control-side ontology is:
+
+1. compute evidence
+2. admitted evidence
+3. workflow state
+4. operator-facing explanation
+5. execution command or routing consequence
+
+Every consequential routing act must emit an explanation payload and audit record. Internal state changes without explanation are not acceptable Control behavior.
+
+Accelerated or CUDA-leaning routing fails closed unless the needed typed evidence exists. Backend admissibility, clean compatibility posture, and release readiness are routing-relevant evidence; missing or blocked evidence cannot silently become route eligibility.
+
 ## Workflow Truth Doctrine
 
 Workflow truth is the record of operational decision state.

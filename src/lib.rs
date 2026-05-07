@@ -2,6 +2,7 @@ pub mod admission;
 pub mod evidence;
 pub mod explanation;
 pub mod governance;
+pub mod orchestration;
 
 pub use admission::{
     admit_evidence, AdmissionEnvelope, AdmissionOutcome, AdmissionRecord, AdmissionRejectionReason,
@@ -23,4 +24,10 @@ pub use explanation::{
 };
 pub use governance::{
     govern_admission, Disposition, GovernanceReason, GovernanceRecord, TrustClass,
+};
+pub use orchestration::{
+    execution_command_kind_id, route_work_item, routing_reason_id, ExecutionCommand,
+    ExecutionCommandKind, OrchestrationAuditRecord, OrchestrationState, QueuePriority,
+    QueueableWorkItem, RoutingDecision, RoutingExplanationPayload, RoutingIntentKind,
+    RoutingReason,
 };
