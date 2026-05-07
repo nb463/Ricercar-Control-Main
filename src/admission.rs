@@ -45,7 +45,8 @@ pub enum AdmissionRejectionReason {
     MissingEvidenceKey,
     EvidenceKindMismatch,
     MissingArtifactIdentity,
-    MissingProvenance,
+    MissingSourceSystem,
+    MissingWorkflowContext,
     MissingReplayReference,
     MissingLineage,
     MalformedContentHash,
@@ -76,10 +77,11 @@ pub fn admit_evidence(envelope: &AdmissionEnvelope) -> AdmissionRecord {
     if envelope.provenance.artifact_key.trim().is_empty() {
         reasons.push(AdmissionRejectionReason::MissingArtifactIdentity);
     }
-    if envelope.provenance.source_system.trim().is_empty()
-        || envelope.provenance.workflow_context.trim().is_empty()
-    {
-        reasons.push(AdmissionRejectionReason::MissingProvenance);
+    if envelope.provenance.source_system.trim().is_empty() {
+        reasons.push(AdmissionRejectionReason::MissingSourceSystem);
+    }
+    if envelope.provenance.workflow_context.trim().is_empty() {
+        reasons.push(AdmissionRejectionReason::MissingWorkflowContext);
     }
     if envelope.provenance.replay_ref.trim().is_empty() {
         reasons.push(AdmissionRejectionReason::MissingReplayReference);

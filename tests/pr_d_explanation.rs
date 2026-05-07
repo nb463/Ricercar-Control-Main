@@ -1,12 +1,14 @@
 use ricercar_control::{
     admit_evidence, assemble_explanation_bundle, AdmissionEnvelope, AdmissionOutcome,
     AdmissionRejectionReason, BackendAdmissibility, BackendCanonicalizationPosture,
-    BackendMemoryLayoutPosture, BackendRole, BackendRuntimePostureSummary, CacheCoherencePosture,
-    CacheLifecycleState, CachePolicySummary, CacheReuseAdmissibility, CompatibilityClassification,
-    CompatibilityGateSummary, ComputeEvidenceKind, ComputeEvidenceSummary, ComputeSemanticStatus,
-    ComputeValidationPosture, ControlTrace, Disposition, EvidenceProvenance, EvidenceReadiness,
-    IncidentKind, PluginCompatibility, PluginCompatibilityReason, PluginCompatibilitySummary,
-    PrecisionPosture, ReleaseReadinessSummary, SurfacingAction, SurfacingAudience, TrustClass,
+    BackendMemoryLayoutPosture, BackendParityOracle, BackendRole, BackendRuntimePostureSummary,
+    CacheCoherencePosture, CacheLifecycleState, CachePolicySummary, CacheReuseAdmissibility,
+    CompatibilityClassification, CompatibilityGateSummary, ComputeEvidenceKind,
+    ComputeEvidenceSummary, ComputeSemanticStatus, ComputeValidationPosture, ControlTrace,
+    DiagramInterpretationStepKind, DiagramOutcomeKind, DiagramPostureChannel, Disposition,
+    EvidenceProvenance, EvidenceReadiness, GovernanceReason, IncidentKind, PluginCompatibility,
+    PluginCompatibilityReason, PluginCompatibilitySummary, PrecisionPosture,
+    ReleaseReadinessSummary, SurfacingAction, SurfacingAudience, TrustClass,
 };
 
 fn hash(byte: char) -> String {
@@ -76,6 +78,8 @@ fn fresh_cache_summary() -> ComputeEvidenceSummary {
 #[test]
 fn admission_rejects_malformed_or_incomplete_evidence() {
     let mut bad_provenance = provenance("");
+    bad_provenance.source_system.clear();
+    bad_provenance.workflow_context.clear();
     bad_provenance.content_hash = "not-a-hash".to_string();
     bad_provenance.replay_ref.clear();
     bad_provenance.lineage.clear();
@@ -97,6 +101,12 @@ fn admission_rejects_malformed_or_incomplete_evidence() {
     assert!(record
         .rejection_reasons
         .contains(&AdmissionRejectionReason::MissingArtifactIdentity));
+    assert!(record
+        .rejection_reasons
+        .contains(&AdmissionRejectionReason::MissingSourceSystem));
+    assert!(record
+        .rejection_reasons
+        .contains(&AdmissionRejectionReason::MissingWorkflowContext));
     assert!(record
         .rejection_reasons
         .contains(&AdmissionRejectionReason::MissingReplayReference));
@@ -214,11 +224,43 @@ fn backend_runtime_posture_holds_cuda_transition_for_parity_review() {
             layout_posture: BackendMemoryLayoutPosture::VersionMismatch,
             precision_posture: PrecisionPosture::ExplicitPolicy,
             canonicalization_posture: BackendCanonicalizationPosture::BackendIndependent,
-            parity_oracle: "cpu_reference_required".to_string(),
+            parity_oracle: BackendParityOracle::CpuReference,
         }),
     );
     let trace = ControlTrace::new("trace/backend-runtime", "workflow/triage", vec![envelope])
         .expect("trace should be valid");
+
+    let bundle = assemble_explanation_bundle(&trace).expect("bundle should assemble");
+
+    assert_eq!(bundle.trust_class, TrustClass::ReviewRequired);
+    assert_eq!(bundle.disposition, Disposition::HoldForReview);
+    assert!(bundle
+        .fragments
+        .iter()
+        .any(|fragment| fragment.incident_kind == IncidentKind::BackendRuntimeNeedsParity));
+}
+
+#[test]
+fn backend_runtime_posture_requires_typed_cpu_reference_parity() {
+    let envelope = envelope(
+        "evidence/backend/missing-parity",
+        ComputeEvidenceKind::BackendRuntimePosture,
+        ComputeSemanticStatus::Lawful,
+        ComputeEvidenceSummary::BackendRuntimePosture(BackendRuntimePostureSummary {
+            backend_role: BackendRole::Optimized,
+            layout_version: "device_layout_shadow_v1".to_string(),
+            layout_posture: BackendMemoryLayoutPosture::DeviceShadowVersioned,
+            precision_posture: PrecisionPosture::ExplicitPolicy,
+            canonicalization_posture: BackendCanonicalizationPosture::BackendIndependent,
+            parity_oracle: BackendParityOracle::Missing,
+        }),
+    );
+    let trace = ControlTrace::new(
+        "trace/backend-missing-parity",
+        "workflow/triage",
+        vec![envelope],
+    )
+    .expect("trace should be valid");
 
     let bundle = assemble_explanation_bundle(&trace).expect("bundle should assemble");
 
@@ -290,6 +332,117 @@ fn non_comparable_evidence_is_admitted_then_held_for_review() {
 }
 
 #[test]
+fn non_blocking_additive_compatibility_gate_still_escalates() {
+    let envelope = envelope(
+        "evidence/compatibility/additive",
+        ComputeEvidenceKind::ContractCompatibilityGate,
+        ComputeSemanticStatus::Lawful,
+        ComputeEvidenceSummary::ContractCompatibilityGate(CompatibilityGateSummary {
+            classification: CompatibilityClassification::Additive,
+            gate_blocking: false,
+            version_bump_required: true,
+            readiness_bump_required: false,
+            reasons: vec!["public_boundary_additive".to_string()],
+        }),
+    );
+    let trace = ControlTrace::new("trace/compat-additive", "workflow/triage", vec![envelope])
+        .expect("trace should be valid");
+
+    let bundle = assemble_explanation_bundle(&trace).expect("bundle should assemble");
+
+    assert_eq!(bundle.trust_class, TrustClass::ReviewRequired);
+    assert_eq!(bundle.disposition, Disposition::Escalate);
+    assert!(bundle.fragments.iter().any(|fragment| {
+        fragment.incident_kind == IncidentKind::BoundaryDrift
+            && fragment.summary.contains("public_boundary_additive")
+    }));
+}
+
+#[test]
+fn mixed_trace_populates_richer_diagram_debug_surface() {
+    let mut rejected = envelope(
+        "evidence/generic/malformed",
+        ComputeEvidenceKind::ComputeArtifact,
+        ComputeSemanticStatus::Lawful,
+        ComputeEvidenceSummary::GenericArtifact {
+            artifact_family: "observable_report".to_string(),
+        },
+    );
+    rejected.validation_posture = ComputeValidationPosture::Invalid;
+
+    let envelopes = vec![
+        envelope(
+            "evidence/plugin/compatible",
+            ComputeEvidenceKind::PluginCompatibility,
+            ComputeSemanticStatus::Lawful,
+            plugin_summary(PluginCompatibility::Compatible),
+        ),
+        envelope(
+            "evidence/cache/stale",
+            ComputeEvidenceKind::CachePolicy,
+            ComputeSemanticStatus::Degraded,
+            ComputeEvidenceSummary::CachePolicy(CachePolicySummary {
+                lifecycle_state: CacheLifecycleState::Stale,
+                reuse_admissibility: CacheReuseAdmissibility::ReuseRefused,
+                recompute_reason: Some(
+                    ricercar_control::RecomputeReason::UpstreamDependencyChanged,
+                ),
+                blocked_reason: None,
+                coherence_posture: CacheCoherencePosture::Coherent,
+            }),
+        ),
+        envelope(
+            "evidence/compatibility/breaking",
+            ComputeEvidenceKind::ContractCompatibilityGate,
+            ComputeSemanticStatus::Lawful,
+            ComputeEvidenceSummary::ContractCompatibilityGate(CompatibilityGateSummary {
+                classification: CompatibilityClassification::Breaking,
+                gate_blocking: true,
+                version_bump_required: true,
+                readiness_bump_required: true,
+                reasons: vec!["gate_version_changed".to_string()],
+            }),
+        ),
+        rejected,
+    ];
+    let trace = ControlTrace::new("trace/mixed-diagram", "workflow/triage", envelopes).unwrap();
+
+    let bundle = assemble_explanation_bundle(&trace).expect("bundle should assemble");
+
+    assert_eq!(bundle.diagram_hint.evidence_flow.len(), 4);
+    assert!(bundle
+        .diagram_hint
+        .latent_evidence_keys
+        .contains(&"evidence/generic/malformed".to_string()));
+    assert!(bundle.diagram_hint.interpretation_steps.iter().any(|step| {
+        step.step == DiagramInterpretationStepKind::Admission
+            && step.evidence_key == "evidence/generic/malformed"
+            && step.outcome == DiagramOutcomeKind::Rejected
+    }));
+    assert!(bundle.diagram_hint.interpretation_steps.iter().any(|step| {
+        step.step == DiagramInterpretationStepKind::DispositionAssignment
+            && step.evidence_key == "evidence/cache/stale"
+            && step.outcome == DiagramOutcomeKind::Degraded
+    }));
+    assert!(bundle.diagram_hint.posture_flow.iter().any(|flow| {
+        flow.channel == DiagramPostureChannel::PluginCompatibility
+            && flow.outcome == DiagramOutcomeKind::Promoted
+    }));
+    assert!(bundle.diagram_hint.posture_flow.iter().any(|flow| {
+        flow.channel == DiagramPostureChannel::CacheRecompute
+            && flow.outcome == DiagramOutcomeKind::Degraded
+    }));
+    assert!(bundle.diagram_hint.posture_flow.iter().any(|flow| {
+        flow.channel == DiagramPostureChannel::CompatibilityGate
+            && flow.outcome == DiagramOutcomeKind::Escalated
+    }));
+    assert!(bundle
+        .diagram_hint
+        .splits
+        .contains(&"admission_vs_approval".to_string()));
+}
+
+#[test]
 fn full_ready_evidence_chain_promotes_with_auditable_bundle() {
     let envelopes = vec![
         envelope(
@@ -344,7 +497,7 @@ fn full_ready_evidence_chain_promotes_with_auditable_bundle() {
                 layout_posture: BackendMemoryLayoutPosture::HostCanonical,
                 precision_posture: PrecisionPosture::DeterministicReference,
                 canonicalization_posture: BackendCanonicalizationPosture::BackendIndependent,
-                parity_oracle: "cpu_reference".to_string(),
+                parity_oracle: BackendParityOracle::CpuReference,
             }),
         ),
     ];
@@ -360,6 +513,13 @@ fn full_ready_evidence_chain_promotes_with_auditable_bundle() {
     assert_eq!(bundle.trust_class, TrustClass::Ready);
     assert_eq!(bundle.disposition, Disposition::Promote);
     assert!(bundle.audit_summary.contains("evidence_count=6"));
+    assert!(bundle.audit_summary.contains("trust=ready"));
+    assert!(bundle.audit_summary.contains("disposition=promote"));
+    assert!(bundle.governance_records.iter().any(|record| {
+        record
+            .reasons
+            .contains(&GovernanceReason::BackendAdmissible)
+    }));
     assert!(bundle
         .diagram_hint
         .contractions

@@ -1,7 +1,7 @@
 use crate::admission::{AdmissionEnvelope, AdmissionOutcome, AdmissionRecord};
 use crate::evidence::{
     BackendAdmissibility, BackendCanonicalizationPosture, BackendMemoryLayoutPosture,
-    CacheLifecycleState, CacheReuseAdmissibility, CompatibilityClassification,
+    BackendParityOracle, CacheLifecycleState, CacheReuseAdmissibility, CompatibilityClassification,
     ComputeEvidenceSummary, ComputeSemanticStatus, EvidenceReadiness, PluginCompatibility,
     PrecisionPosture,
 };
@@ -32,6 +32,7 @@ pub enum GovernanceReason {
     EvidenceReady,
     EvidenceDegraded,
     ComputeRefused,
+    BackendAdmissible,
     PluginCompatible,
     PluginIncompatible,
     BackendInadmissible,
@@ -89,7 +90,7 @@ pub fn govern_admission(
         }
         ComputeEvidenceSummary::BackendAdmissibility { admissibility, .. } => {
             if *admissibility == BackendAdmissibility::Admissible {
-                ready_record(envelope, GovernanceReason::BackendRuntimeReady)
+                ready_record(envelope, GovernanceReason::BackendAdmissible)
             } else {
                 GovernanceRecord {
                     evidence_key: envelope.evidence_key.clone(),
@@ -119,6 +120,8 @@ pub fn govern_admission(
             },
         },
         ComputeEvidenceSummary::ContractCompatibilityGate(summary) => {
+            // Any non-internal boundary drift stays review-visible in Control, even
+            // when Compute reports the gate as non-blocking.
             if summary.gate_blocking
                 || summary.classification != CompatibilityClassification::InternalOnly
             {
@@ -155,7 +158,7 @@ pub fn govern_admission(
                 || summary.precision_posture == PrecisionPosture::Mismatch
                 || summary.canonicalization_posture
                     != BackendCanonicalizationPosture::BackendIndependent
-                || !summary.parity_oracle.contains("cpu_reference")
+                || summary.parity_oracle != BackendParityOracle::CpuReference
             {
                 GovernanceRecord {
                     evidence_key: envelope.evidence_key.clone(),

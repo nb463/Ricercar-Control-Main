@@ -223,6 +223,13 @@ pub enum BackendCanonicalizationPosture {
     Unknown,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BackendParityOracle {
+    CpuReference,
+    Missing,
+    Unknown,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BackendRuntimePostureSummary {
     pub backend_role: BackendRole,
@@ -230,7 +237,7 @@ pub struct BackendRuntimePostureSummary {
     pub layout_posture: BackendMemoryLayoutPosture,
     pub precision_posture: PrecisionPosture,
     pub canonicalization_posture: BackendCanonicalizationPosture,
-    pub parity_oracle: String,
+    pub parity_oracle: BackendParityOracle,
 }
 
 pub fn is_strict_content_hash(value: &str) -> bool {
