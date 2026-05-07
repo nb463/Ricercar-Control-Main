@@ -75,6 +75,16 @@ fn fresh_cache_summary() -> ComputeEvidenceSummary {
     })
 }
 
+fn release_readiness_summary(
+    readiness: EvidenceReadiness,
+    reasons: &[&str],
+) -> ComputeEvidenceSummary {
+    ComputeEvidenceSummary::ReleaseReadiness(ReleaseReadinessSummary {
+        readiness,
+        reasons: reasons.iter().map(|reason| (*reason).to_string()).collect(),
+    })
+}
+
 #[test]
 fn admission_rejects_malformed_or_incomplete_evidence() {
     let mut bad_provenance = provenance("");
@@ -486,10 +496,14 @@ fn full_ready_evidence_chain_promotes_with_auditable_bundle() {
             "evidence/release/ready",
             ComputeEvidenceKind::ReleaseReadiness,
             ComputeSemanticStatus::Lawful,
-            ComputeEvidenceSummary::ReleaseReadiness(ReleaseReadinessSummary {
-                readiness: EvidenceReadiness::Ready,
-                boundary_readiness_signal: "ready".to_string(),
-            }),
+            release_readiness_summary(
+                EvidenceReadiness::Ready,
+                &[
+                    "boundary_compatibility_clean",
+                    "proof_lane_clean",
+                    "required_docs_present",
+                ],
+            ),
         ),
         envelope(
             "evidence/backend/reference",
@@ -532,4 +546,79 @@ fn full_ready_evidence_chain_promotes_with_auditable_bundle() {
         .diagram_hint
         .contractions
         .contains(&"evidence_chain_to_explanation_bundle".to_string()));
+}
+
+#[test]
+fn release_readiness_needs_review_preserves_stable_reason_ids() {
+    let envelope = envelope(
+        "evidence/release/needs-review",
+        ComputeEvidenceKind::ReleaseReadiness,
+        ComputeSemanticStatus::Lawful,
+        release_readiness_summary(
+            EvidenceReadiness::NeedsReview,
+            &[
+                "boundary_compatibility_clean",
+                "cuda_promotion_needs_review",
+            ],
+        ),
+    );
+    let trace = ControlTrace::new(
+        "trace/release-needs-review",
+        "workflow/triage",
+        vec![envelope],
+    )
+    .expect("trace should be valid");
+
+    let bundle = assemble_explanation_bundle(&trace).expect("bundle should assemble");
+
+    assert_eq!(bundle.trust_class, TrustClass::ReviewRequired);
+    assert_eq!(bundle.disposition, Disposition::HoldForReview);
+    assert!(bundle.fragments.iter().any(|fragment| {
+        fragment.incident_kind == IncidentKind::HumanReviewRequired
+            && fragment.summary.contains("release readiness needs review")
+            && fragment.summary.contains("cuda_promotion_needs_review")
+    }));
+}
+
+#[test]
+fn release_readiness_blocked_preserves_stable_reason_ids() {
+    let envelope = envelope(
+        "evidence/release/blocked",
+        ComputeEvidenceKind::ReleaseReadiness,
+        ComputeSemanticStatus::Lawful,
+        release_readiness_summary(
+            EvidenceReadiness::Blocked,
+            &["memory_readiness_blocked", "supported_surfaces_missing"],
+        ),
+    );
+    let trace = ControlTrace::new("trace/release-blocked", "workflow/triage", vec![envelope])
+        .expect("trace should be valid");
+
+    let bundle = assemble_explanation_bundle(&trace).expect("bundle should assemble");
+
+    assert_eq!(bundle.trust_class, TrustClass::ReviewRequired);
+    assert_eq!(bundle.disposition, Disposition::Escalate);
+    assert!(bundle.fragments.iter().any(|fragment| {
+        fragment.incident_kind == IncidentKind::ReleaseReadinessBlocked
+            && fragment.summary.contains("release readiness is blocked")
+            && fragment.summary.contains("memory_readiness_blocked")
+            && fragment.summary.contains("supported_surfaces_missing")
+    }));
+}
+
+#[test]
+fn admission_rejects_release_readiness_with_empty_reason_ids() {
+    let envelope = envelope(
+        "evidence/release/malformed",
+        ComputeEvidenceKind::ReleaseReadiness,
+        ComputeSemanticStatus::Lawful,
+        release_readiness_summary(EvidenceReadiness::Ready, &[" "]),
+    );
+
+    let record = admit_evidence(&envelope);
+
+    assert_eq!(record.outcome, AdmissionOutcome::Rejected);
+    assert!(record
+        .rejection_reasons
+        .contains(&AdmissionRejectionReason::SemanticallyInadmissible));
 }
