@@ -20,6 +20,7 @@ Start here:
 - [docs/GLOSSARY.md](docs/GLOSSARY.md)
 - [docs/CONTROL_ADMISSION_AND_DISPOSITION_BOUNDARY_V0.md](docs/CONTROL_ADMISSION_AND_DISPOSITION_BOUNDARY_V0.md)
 - [docs/CONTROL_EXPLANATION_AND_SURFACING_GRAMMAR_V0.md](docs/CONTROL_EXPLANATION_AND_SURFACING_GRAMMAR_V0.md)
+- [docs/qdiscocirc/QDISCOCIRC_PROBE_MODEL_V0.md](docs/qdiscocirc/QDISCOCIRC_PROBE_MODEL_V0.md)
 
 ## Business Thesis
 
@@ -102,3 +103,4 @@ PR E adds the first narrow routing/orchestration runtime slice. It turns admitte
 - [Control Admission And Disposition Boundary v0](docs/CONTROL_ADMISSION_AND_DISPOSITION_BOUNDARY_V0.md)
 - [Control Explanation And Surfacing Grammar v0](docs/CONTROL_EXPLANATION_AND_SURFACING_GRAMMAR_V0.md)
 - [Control Orchestration And Routing Runtime v0](docs/CONTROL_ORCHESTRATION_AND_ROUTING_RUNTIME_V0.md)
+- [QDisCoCirc Probe Model v0](docs/qdiscocirc/QDISCOCIRC_PROBE_MODEL_V0.md)
