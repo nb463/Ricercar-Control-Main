@@ -124,6 +124,10 @@ The workflow-auditable record of a routing decision, execution command, orchestr
 
 The structured explanation emitted for a consequential routing act. It preserves admitted and rejected evidence keys, Compute-owned reason ids, Control-owned routing reasons, and an audit reference.
 
+## CudaBackendPromotionSummary
+
+A Control-side summary of Ricercar-Compute PR37 CUDA/backend promotion evidence. Control consumes its promotion posture and reason for accelerated routing without rederiving backend admissibility, layout, parity, or canonicalization truth.
+
 ## Explanation Bundle
 
 A workflow-auditable Control output that records admission results, trust class, disposition, incident fragments, surfacing directives, and a compact audit summary.

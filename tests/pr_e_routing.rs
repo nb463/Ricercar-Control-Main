@@ -1,13 +1,17 @@
 use ricercar_control::{
     admit_evidence, route_work_item, AdmissionEnvelope, AdmissionOutcome, BackendAdmissibility,
-    BackendCanonicalizationPosture, BackendMemoryLayoutPosture, BackendParityOracle, BackendRole,
-    BackendRuntimePostureSummary, CacheBlockedReason, CacheCoherencePosture, CacheLifecycleState,
-    CachePolicySummary, CacheReuseAdmissibility, CompatibilityClassification,
-    CompatibilityGateSummary, ComputeEvidenceKind, ComputeEvidenceSummary, ComputeSemanticStatus,
-    ComputeValidationPosture, EvidenceProvenance, EvidenceReadiness, ExecutionCommandKind,
-    OrchestrationState, PluginCompatibility, PluginCompatibilityReason, PluginCompatibilitySummary,
-    PrecisionPosture, QueuePriority, QueueableWorkItem, RecomputeReason, ReleaseReadinessSummary,
-    RoutingIntentKind, RoutingReason,
+    BackendCanonicalizationPosture, BackendLayoutCompatibility, BackendLayoutVersion,
+    BackendMemoryLayoutPosture, BackendPackingPolicy, BackendParityOracle, BackendPrecisionMode,
+    BackendRole, BackendRuntimePostureSummary, BackendRuntimeTrack, CacheBlockedReason,
+    CacheCoherencePosture, CacheLifecycleState, CachePolicySummary, CacheReuseAdmissibility,
+    CompatibilityClassification, CompatibilityGateSummary, ComputeEvidenceKind,
+    ComputeEvidenceSummary, ComputeSemanticStatus, ComputeValidationPosture,
+    CudaBackendPromotionSummary, CudaCanonicalizationPosture, CudaParityBudget, CudaParityStatus,
+    CudaPromotionPosture, CudaPromotionReason, CudaWorkloadEligibility,
+    CudaWorkloadEligibilityReason, EvidenceProvenance, EvidenceReadiness, ExecutionCommandKind,
+    HostDeviceTransferSemantics, OrchestrationState, PluginCompatibility,
+    PluginCompatibilityReason, PluginCompatibilitySummary, PrecisionPosture, QueuePriority,
+    QueueableWorkItem, RecomputeReason, ReleaseReadinessSummary, RoutingIntentKind, RoutingReason,
 };
 
 fn hash(byte: char) -> String {
@@ -175,6 +179,17 @@ fn backend_admissible() -> AdmissionEnvelope {
     )
 }
 
+fn backend_inadmissible() -> AdmissionEnvelope {
+    envelope(
+        "evidence/backend/inadmissible",
+        ComputeEvidenceKind::BackendAdmissibility,
+        ComputeEvidenceSummary::BackendAdmissibility {
+            admissibility: BackendAdmissibility::Inadmissible,
+            reason: "backend_target_inadmissible".to_string(),
+        },
+    )
+}
+
 fn backend_runtime_ready() -> AdmissionEnvelope {
     envelope(
         "evidence/backend/runtime-ready",
@@ -203,6 +218,97 @@ fn backend_runtime_needs_review() -> AdmissionEnvelope {
             parity_oracle: BackendParityOracle::CpuReference,
         }),
     )
+}
+
+fn cuda_promotion(
+    promotion_posture: CudaPromotionPosture,
+    promotion_reason: CudaPromotionReason,
+    layout_compatibility: BackendLayoutCompatibility,
+    parity_status: CudaParityStatus,
+    canonicalization: CudaCanonicalizationPosture,
+    observed_delta_units: u64,
+) -> AdmissionEnvelope {
+    envelope(
+        "evidence/cuda/promotion",
+        ComputeEvidenceKind::CudaBackendPromotion,
+        ComputeEvidenceSummary::CudaBackendPromotion(CudaBackendPromotionSummary {
+            backend_admissibility: BackendAdmissibility::Admissible,
+            runtime_track: BackendRuntimeTrack::CudaOptimized,
+            layout_version: BackendLayoutVersion::CudaDeviceTensorV0,
+            transfer_semantics: HostDeviceTransferSemantics::HostDeviceRoundTrip,
+            precision_mode: BackendPrecisionMode::Float32Deterministic,
+            packing_policy: BackendPackingPolicy::DeviceLocalContiguous,
+            canonicalization_boundary: "backend_independent_compute_artifact_v1".to_string(),
+            layout_compatibility,
+            parity_budget: CudaParityBudget::BoundedUnits { max_delta_units: 2 },
+            observed_delta_units,
+            canonicalization,
+            workload_eligibility: CudaWorkloadEligibility::Eligible,
+            eligibility_reason: CudaWorkloadEligibilityReason::EngineWorkloadEligible,
+            parity_status,
+            promotion_posture,
+            promotion_reason,
+        }),
+    )
+}
+
+fn cuda_promotion_promote() -> AdmissionEnvelope {
+    cuda_promotion(
+        CudaPromotionPosture::Promote,
+        CudaPromotionReason::PromotionEligible,
+        BackendLayoutCompatibility::Canonicalizable,
+        CudaParityStatus::ParityClean,
+        CudaCanonicalizationPosture::Canonicalized,
+        0,
+    )
+}
+
+fn cuda_promotion_layout_hold() -> AdmissionEnvelope {
+    cuda_promotion(
+        CudaPromotionPosture::Hold,
+        CudaPromotionReason::LayoutReviewRequired,
+        BackendLayoutCompatibility::ReviewRequired,
+        CudaParityStatus::ParityClean,
+        CudaCanonicalizationPosture::Canonicalized,
+        0,
+    )
+}
+
+fn cuda_promotion_parity_fallback() -> AdmissionEnvelope {
+    cuda_promotion(
+        CudaPromotionPosture::Fallback,
+        CudaPromotionReason::ParityOverBudget,
+        BackendLayoutCompatibility::Canonicalizable,
+        CudaParityStatus::ParityOverBudget,
+        CudaCanonicalizationPosture::Canonicalized,
+        3,
+    )
+}
+
+fn cuda_promotion_noncanonical_fallback() -> AdmissionEnvelope {
+    cuda_promotion(
+        CudaPromotionPosture::Fallback,
+        CudaPromotionReason::NonCanonicalizable,
+        BackendLayoutCompatibility::Canonicalizable,
+        CudaParityStatus::ParityClean,
+        CudaCanonicalizationPosture::NonCanonicalizable,
+        0,
+    )
+}
+
+fn cuda_promotion_backend_inadmissible_fallback() -> AdmissionEnvelope {
+    let mut evidence = cuda_promotion(
+        CudaPromotionPosture::Fallback,
+        CudaPromotionReason::BackendInadmissible,
+        BackendLayoutCompatibility::Canonicalizable,
+        CudaParityStatus::ParityClean,
+        CudaCanonicalizationPosture::Canonicalized,
+        0,
+    );
+    if let ComputeEvidenceSummary::CudaBackendPromotion(summary) = &mut evidence.summary {
+        summary.backend_admissibility = BackendAdmissibility::Inadmissible;
+    }
+    evidence
 }
 
 fn work_item(
@@ -286,7 +392,6 @@ fn release_blocking_and_compatibility_blocking_prevent_execution() {
         "work/blocked",
         RoutingIntentKind::AcceleratedExecution,
         vec![
-            backend_admissible(),
             backend_runtime_ready(),
             compatibility_blocked(),
             release_blocked(),
@@ -316,7 +421,7 @@ fn release_blocking_and_compatibility_blocking_prevent_execution() {
 }
 
 #[test]
-fn accelerated_route_fails_closed_without_backend_admissibility() {
+fn accelerated_route_fails_closed_without_pr37_promotion_evidence() {
     let item = work_item(
         "work/accelerated-missing-backend",
         RoutingIntentKind::AcceleratedExecution,
@@ -339,7 +444,7 @@ fn accelerated_route_fails_closed_without_backend_admissibility() {
     assert!(audit
         .decision
         .reasons
-        .contains(&RoutingReason::BackendAdmissibilityMissing));
+        .contains(&RoutingReason::CudaPromotionEvidenceMissing));
     assert!(audit
         .decision
         .reasons
@@ -357,6 +462,7 @@ fn accelerated_release_readiness_needs_review_holds_without_missing_reason() {
             cache_fresh(),
             compatibility_clean(),
             release_needs_review(),
+            cuda_promotion_promote(),
         ],
     );
 
@@ -391,6 +497,7 @@ fn accelerated_route_with_required_evidence_can_promote() {
             cache_fresh(),
             compatibility_clean(),
             release_ready(),
+            cuda_promotion_promote(),
         ],
     );
 
@@ -404,7 +511,137 @@ fn accelerated_route_with_required_evidence_can_promote() {
     assert!(audit
         .routing_explanation
         .compute_reason_ids
-        .contains(&"backend_admissibility_declared".to_string()));
+        .contains(&"promotion_eligible".to_string()));
+    assert!(audit
+        .decision
+        .reasons
+        .contains(&RoutingReason::CudaPromotionEligible));
+}
+
+#[test]
+fn accelerated_cuda_layout_review_holds_with_specific_reason() {
+    let item = work_item(
+        "work/accelerated-layout-review",
+        RoutingIntentKind::AcceleratedExecution,
+        vec![
+            cache_fresh(),
+            compatibility_clean(),
+            release_ready(),
+            cuda_promotion_layout_hold(),
+        ],
+    );
+
+    let audit = route_work_item(&item).expect("routing should succeed");
+
+    assert_eq!(
+        audit.command.command_kind,
+        ExecutionCommandKind::HoldForReview
+    );
+    assert!(audit
+        .decision
+        .reasons
+        .contains(&RoutingReason::CudaLayoutReviewRequired));
+    assert!(audit
+        .routing_explanation
+        .compute_reason_ids
+        .contains(&"layout_review_required".to_string()));
+}
+
+#[test]
+fn accelerated_cuda_parity_over_budget_routes_to_fallback() {
+    let item = work_item(
+        "work/accelerated-parity-over-budget",
+        RoutingIntentKind::AcceleratedExecution,
+        vec![
+            cache_fresh(),
+            compatibility_clean(),
+            release_ready(),
+            cuda_promotion_parity_fallback(),
+        ],
+    );
+
+    let audit = route_work_item(&item).expect("routing should succeed");
+
+    assert_eq!(
+        audit.command.command_kind,
+        ExecutionCommandKind::RouteToFallback
+    );
+    assert_eq!(audit.state, OrchestrationState::FallbackRouted);
+    assert!(audit
+        .decision
+        .reasons
+        .contains(&RoutingReason::CudaParityOverBudget));
+    assert!(audit
+        .routing_explanation
+        .compute_reason_ids
+        .contains(&"parity_over_budget".to_string()));
+}
+
+#[test]
+fn accelerated_cuda_promotion_posture_beats_standalone_backend_inadmissible() {
+    let item = work_item(
+        "work/accelerated-backend-inadmissible-fallback",
+        RoutingIntentKind::AcceleratedExecution,
+        vec![
+            cache_fresh(),
+            compatibility_clean(),
+            release_ready(),
+            backend_inadmissible(),
+            cuda_promotion_backend_inadmissible_fallback(),
+        ],
+    );
+
+    let audit = route_work_item(&item).expect("routing should succeed");
+
+    assert_eq!(
+        audit.command.command_kind,
+        ExecutionCommandKind::RouteToFallback
+    );
+    assert_ne!(
+        audit.command.command_kind,
+        ExecutionCommandKind::RefuseExecution
+    );
+    assert!(audit
+        .decision
+        .reasons
+        .contains(&RoutingReason::CudaBackendInadmissible));
+    assert!(!audit
+        .decision
+        .reasons
+        .contains(&RoutingReason::BackendInadmissible));
+    assert!(audit
+        .routing_explanation
+        .compute_reason_ids
+        .contains(&"backend_inadmissible".to_string()));
+}
+
+#[test]
+fn accelerated_cuda_noncanonicalizable_routes_to_fallback() {
+    let item = work_item(
+        "work/accelerated-noncanonical",
+        RoutingIntentKind::AcceleratedExecution,
+        vec![
+            cache_fresh(),
+            compatibility_clean(),
+            release_ready(),
+            cuda_promotion_noncanonical_fallback(),
+        ],
+    );
+
+    let audit = route_work_item(&item).expect("routing should succeed");
+
+    assert_eq!(
+        audit.command.command_kind,
+        ExecutionCommandKind::RouteToFallback
+    );
+    assert!(audit
+        .decision
+        .reasons
+        .contains(&RoutingReason::CudaNonCanonicalizable));
+    assert!(audit
+        .routing_explanation
+        .compute_reason_ids
+        .contains(&"non_canonicalizable".to_string()));
 }
 
 #[test]

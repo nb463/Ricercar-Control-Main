@@ -7,6 +7,7 @@ pub enum ComputeEvidenceKind {
     ReleaseReadiness,
     BackendRuntimePosture,
     BackendAdmissibility,
+    CudaBackendPromotion,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -71,6 +72,7 @@ pub enum ComputeEvidenceSummary {
         admissibility: BackendAdmissibility,
         reason: String,
     },
+    CudaBackendPromotion(CudaBackendPromotionSummary),
 }
 
 impl ComputeEvidenceSummary {
@@ -83,6 +85,7 @@ impl ComputeEvidenceSummary {
             Self::ReleaseReadiness(_) => ComputeEvidenceKind::ReleaseReadiness,
             Self::BackendRuntimePosture(_) => ComputeEvidenceKind::BackendRuntimePosture,
             Self::BackendAdmissibility { .. } => ComputeEvidenceKind::BackendAdmissibility,
+            Self::CudaBackendPromotion(_) => ComputeEvidenceKind::CudaBackendPromotion,
         }
     }
 }
@@ -238,6 +241,123 @@ pub struct BackendRuntimePostureSummary {
     pub precision_posture: PrecisionPosture,
     pub canonicalization_posture: BackendCanonicalizationPosture,
     pub parity_oracle: BackendParityOracle,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BackendRuntimeTrack {
+    CpuReference,
+    CudaOptimized,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BackendLayoutVersion {
+    HostCanonicalV0,
+    CudaDeviceTensorV0,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HostDeviceTransferSemantics {
+    HostLocal,
+    HostDeviceRoundTrip,
+    DeviceOnlyNoCanonicalReturn,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BackendPrecisionMode {
+    DeterministicReference,
+    Float32Deterministic,
+    Float64Deterministic,
+    MixedPrecisionExplicit,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BackendPackingPolicy {
+    CanonicalHost,
+    DeviceLocalContiguous,
+    ExplicitTensorPacked,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BackendLayoutCompatibility {
+    Compatible,
+    Canonicalizable,
+    ReviewRequired,
+    Breaking,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CudaParityBudget {
+    Exact,
+    BoundedUnits { max_delta_units: u64 },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CudaCanonicalizationPosture {
+    Canonicalized,
+    RematerializationRequired,
+    NonCanonicalizable,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CudaWorkloadEligibility {
+    Eligible,
+    Ineligible,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CudaWorkloadEligibilityReason {
+    EngineWorkloadEligible,
+    BackendInadmissible,
+    RuntimeTrackNotCuda,
+    WorkloadNotCudaEligible,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CudaParityStatus {
+    ParityClean,
+    ParityWithinBudget,
+    ParityOverBudget,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CudaPromotionPosture {
+    Promote,
+    Hold,
+    Degrade,
+    Fallback,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CudaPromotionReason {
+    PromotionEligible,
+    ParityWithinBudget,
+    BackendInadmissible,
+    WorkloadIneligible,
+    LayoutReviewRequired,
+    LayoutBreaking,
+    CanonicalizationRequired,
+    NonCanonicalizable,
+    ParityOverBudget,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CudaBackendPromotionSummary {
+    pub backend_admissibility: BackendAdmissibility,
+    pub runtime_track: BackendRuntimeTrack,
+    pub layout_version: BackendLayoutVersion,
+    pub transfer_semantics: HostDeviceTransferSemantics,
+    pub precision_mode: BackendPrecisionMode,
+    pub packing_policy: BackendPackingPolicy,
+    pub canonicalization_boundary: String,
+    pub layout_compatibility: BackendLayoutCompatibility,
+    pub parity_budget: CudaParityBudget,
+    pub observed_delta_units: u64,
+    pub canonicalization: CudaCanonicalizationPosture,
+    pub workload_eligibility: CudaWorkloadEligibility,
+    pub eligibility_reason: CudaWorkloadEligibilityReason,
+    pub parity_status: CudaParityStatus,
+    pub promotion_posture: CudaPromotionPosture,
+    pub promotion_reason: CudaPromotionReason,
 }
 
 pub fn is_strict_content_hash(value: &str) -> bool {

@@ -57,13 +57,14 @@ The runtime is local and deterministic. It does not persist records, distribute 
 
 ## Evidence Consumption
 
-Routing consumes typed summaries already established in PR D and finalized by Compute PR34-PR36:
+Routing consumes typed summaries already established in PR D and finalized by Compute PR34-PR37:
 
 - `CachePolicySummary`
 - `CompatibilityGateSummary`
 - `ReleaseReadinessSummary`
 - `BackendAdmissibility`
 - `BackendRuntimePostureSummary`
+- `CudaBackendPromotionSummary`
 - plugin compatibility summaries
 
 Routing records typed Control consequences and preserves Compute-owned reason ids in the routing explanation payload.
@@ -107,13 +108,14 @@ Accelerated or CUDA-leaning routes fail closed unless typed evidence exists.
 
 At minimum:
 
-- accelerated routing is not eligible without backend admissibility evidence
+- accelerated routing is not eligible without PR37-native CUDA/backend promotion evidence
 - accelerated routing is not eligible without release readiness evidence
 - accelerated routing is not eligible without clean compatibility-gate evidence
-- backend runtime parity, layout, precision, or canonicalization review prevents ordinary accelerated execution
+- CUDA promotion posture drives accelerated routing: promote can execute, hold/degrade holds for review, and fallback routes away from acceleration
+- backend runtime parity, layout, precision, or canonicalization posture remains explainable support evidence, but coarse runtime posture alone does not make acceleration eligible
 - missing or unknown evidence cannot silently become eligibility
 
-PR E does not finish PR37 backend/layout governance. It leaves a typed seam for richer backend/layout policy.
+PR E consumes PR37 backend/layout promotion evidence. It does not rederive backend admissibility, parity, canonicalization, or layout truth locally.
 
 ## Non-Scope
 

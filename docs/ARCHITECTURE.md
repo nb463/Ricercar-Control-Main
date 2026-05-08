@@ -123,7 +123,7 @@ Backend runtime and CUDA-transition evidence are interpreted as Control posture 
 
 PR E turns admitted compute evidence into explicit Control-owned routing consequence.
 
-Control routing consumes typed Compute summaries for cache posture, compatibility gates, release readiness, backend admissibility, backend runtime posture, and plugin compatibility. It does not recompute those semantics locally.
+Control routing consumes typed Compute summaries for cache posture, compatibility gates, release readiness, backend admissibility, PR37 CUDA/backend promotion posture, backend runtime posture, and plugin compatibility. It does not recompute those semantics locally.
 
 The Control-side ontology is:
 
@@ -135,7 +135,7 @@ The Control-side ontology is:
 
 Every consequential routing act must emit an explanation payload and audit record. Internal state changes without explanation are not acceptable Control behavior.
 
-Accelerated or CUDA-leaning routing fails closed unless the needed typed evidence exists. Backend admissibility, clean compatibility posture, and release readiness are routing-relevant evidence; missing or blocked evidence cannot silently become route eligibility.
+Accelerated or CUDA-leaning routing fails closed unless the needed typed evidence exists. PR37 CUDA promotion evidence, clean compatibility posture, and release readiness are routing-relevant evidence; missing or blocked evidence cannot silently become route eligibility.
 
 ## Workflow Truth Doctrine
 

@@ -27,6 +27,7 @@ pub enum IncidentKind {
     BoundaryDrift,
     ReleaseReadinessBlocked,
     BackendRuntimeNeedsParity,
+    CudaPromotionPosture,
     HumanReviewRequired,
     EvidenceReady,
 }
@@ -123,6 +124,7 @@ pub struct DiagramInterpretationStep {
 pub enum DiagramPostureChannel {
     BackendAdmissibility,
     BackendRuntime,
+    CudaPromotion,
     PluginCompatibility,
     CacheRecompute,
     CompatibilityGate,
@@ -358,6 +360,27 @@ fn fragment_text(
             "backend runtime posture needs parity, layout, precision, or canonicalization review"
                 .to_string(),
         ),
+        GovernanceReason::CudaPromotionEligible => (
+            IncidentKind::EvidenceReady,
+            ExplanationSeverity::Info,
+            "CUDA promotion evidence permits accelerated execution under Compute-owned parity and canonicalization posture"
+                .to_string(),
+        ),
+        GovernanceReason::CudaPromotionNeedsReview => (
+            IncidentKind::CudaPromotionPosture,
+            ExplanationSeverity::Warning,
+            cuda_promotion_summary(&envelope.summary, "requires review"),
+        ),
+        GovernanceReason::CudaPromotionDegraded => (
+            IncidentKind::CudaPromotionPosture,
+            ExplanationSeverity::Warning,
+            cuda_promotion_summary(&envelope.summary, "is degraded and held for review"),
+        ),
+        GovernanceReason::CudaPromotionFallback => (
+            IncidentKind::CudaPromotionPosture,
+            ExplanationSeverity::Warning,
+            cuda_promotion_summary(&envelope.summary, "requires fallback"),
+        ),
         GovernanceReason::GenericArtifactNeedsReview => (
             IncidentKind::HumanReviewRequired,
             ExplanationSeverity::Warning,
@@ -500,6 +523,16 @@ fn release_readiness_summary(summary: &ComputeEvidenceSummary, posture: &str) ->
     }
 }
 
+fn cuda_promotion_summary(summary: &ComputeEvidenceSummary, posture: &str) -> String {
+    match summary {
+        ComputeEvidenceSummary::CudaBackendPromotion(summary) => format!(
+            "CUDA promotion evidence {posture}: posture={:?} reason={:?}",
+            summary.promotion_posture, summary.promotion_reason
+        ),
+        _ => format!("CUDA promotion evidence {posture}"),
+    }
+}
+
 fn diagram_hint_for(
     trace: &ControlTrace,
     admission_records: &[AdmissionRecord],
@@ -557,6 +590,14 @@ fn diagram_hint_for(
         )
     }) {
         boxes.push("backend_runtime_posture".to_string());
+    }
+    if trace.envelopes.iter().any(|envelope| {
+        matches!(
+            envelope.summary,
+            ComputeEvidenceSummary::CudaBackendPromotion(_)
+        )
+    }) {
+        boxes.push("cuda_backend_promotion".to_string());
     }
     if trace.envelopes.iter().any(|envelope| {
         matches!(
@@ -748,6 +789,7 @@ fn posture_channel_for(summary: &ComputeEvidenceSummary) -> DiagramPostureChanne
         }
         ComputeEvidenceSummary::ReleaseReadiness(_) => DiagramPostureChannel::ReleaseReadiness,
         ComputeEvidenceSummary::BackendRuntimePosture(_) => DiagramPostureChannel::BackendRuntime,
+        ComputeEvidenceSummary::CudaBackendPromotion(_) => DiagramPostureChannel::CudaPromotion,
         ComputeEvidenceSummary::BackendAdmissibility { .. } => {
             DiagramPostureChannel::BackendAdmissibility
         }

@@ -1,10 +1,14 @@
 use crate::admission::{AdmissionEnvelope, AdmissionOutcome};
 use crate::evidence::{
-    BackendAdmissibility, BackendCanonicalizationPosture, BackendMemoryLayoutPosture,
-    BackendParityOracle, CacheBlockedReason, CacheCoherencePosture, CacheLifecycleState,
-    CachePolicySummary, CacheReuseAdmissibility, CompatibilityClassification,
-    ComputeEvidenceSummary, EvidenceReadiness, PluginCompatibility, PluginCompatibilityReason,
-    PrecisionPosture, RecomputeReason,
+    BackendAdmissibility, BackendCanonicalizationPosture, BackendLayoutCompatibility,
+    BackendLayoutVersion, BackendMemoryLayoutPosture, BackendPackingPolicy, BackendParityOracle,
+    BackendPrecisionMode, BackendRuntimeTrack, CacheBlockedReason, CacheCoherencePosture,
+    CacheLifecycleState, CachePolicySummary, CacheReuseAdmissibility, CompatibilityClassification,
+    ComputeEvidenceSummary, CudaBackendPromotionSummary, CudaCanonicalizationPosture,
+    CudaParityBudget, CudaParityStatus, CudaPromotionPosture, CudaPromotionReason,
+    CudaWorkloadEligibility, CudaWorkloadEligibilityReason, EvidenceReadiness,
+    HostDeviceTransferSemantics, PluginCompatibility, PluginCompatibilityReason, PrecisionPosture,
+    RecomputeReason,
 };
 use crate::explanation::{assemble_explanation_bundle, ControlTrace, ExplanationBundle};
 use crate::governance::{Disposition, GovernanceReason};
@@ -103,6 +107,16 @@ pub enum RoutingReason {
     BackendAdmissibilityMissing,
     BackendInadmissible,
     BackendRuntimeNeedsParity,
+    CudaPromotionEvidenceMissing,
+    CudaPromotionEligible,
+    CudaBackendInadmissible,
+    CudaWorkloadIneligible,
+    CudaLayoutReviewRequired,
+    CudaLayoutBreaking,
+    CudaCanonicalizationRequired,
+    CudaNonCanonicalizable,
+    CudaParityWithinBudget,
+    CudaParityOverBudget,
     AcceleratedRouteRequiresTypedEvidence,
     FallbackRequested,
     SuppressionRequested,
@@ -211,15 +225,11 @@ fn routing_decision_for(
     } else if has_cache_blocked(&work_item.evidence) {
         reasons.push(RoutingReason::CacheBlocked);
         ExecutionCommandKind::HoldForReview
-    } else if has_backend_inadmissible(&work_item.evidence) {
+    } else if work_item.intent != RoutingIntentKind::AcceleratedExecution
+        && has_backend_inadmissible(&work_item.evidence)
+    {
         reasons.push(RoutingReason::BackendInadmissible);
         ExecutionCommandKind::RefuseExecution
-    } else if work_item.intent == RoutingIntentKind::AcceleratedExecution
-        && !has_backend_admissible(&work_item.evidence)
-    {
-        reasons.push(RoutingReason::AcceleratedRouteRequiresTypedEvidence);
-        reasons.push(RoutingReason::BackendAdmissibilityMissing);
-        ExecutionCommandKind::HoldForReview
     } else if work_item.intent == RoutingIntentKind::AcceleratedExecution
         && has_release_needs_review(&work_item.evidence)
     {
@@ -237,11 +247,15 @@ fn routing_decision_for(
         reasons.push(RoutingReason::AcceleratedRouteRequiresTypedEvidence);
         reasons.push(RoutingReason::CompatibilityEvidenceMissing);
         ExecutionCommandKind::HoldForReview
-    } else if work_item.intent == RoutingIntentKind::AcceleratedExecution
-        && has_backend_runtime_review(&work_item.evidence)
-    {
-        reasons.push(RoutingReason::BackendRuntimeNeedsParity);
-        ExecutionCommandKind::HoldForReview
+    } else if work_item.intent == RoutingIntentKind::AcceleratedExecution {
+        match cuda_promotion_summary(&work_item.evidence) {
+            Some(summary) => command_from_cuda_promotion(summary, &mut reasons),
+            None => {
+                reasons.push(RoutingReason::AcceleratedRouteRequiresTypedEvidence);
+                reasons.push(RoutingReason::CudaPromotionEvidenceMissing);
+                ExecutionCommandKind::HoldForReview
+            }
+        }
     } else if has_cache_recompute(&work_item.evidence)
         || work_item.intent == RoutingIntentKind::Recompute
     {
@@ -262,6 +276,22 @@ fn routing_decision_for(
         command_kind,
         reasons,
         evidence_keys,
+    }
+}
+
+fn command_from_cuda_promotion(
+    summary: &CudaBackendPromotionSummary,
+    reasons: &mut Vec<RoutingReason>,
+) -> ExecutionCommandKind {
+    let reason = cuda_promotion_routing_reason(summary.promotion_reason);
+    reasons.push(reason);
+
+    match summary.promotion_posture {
+        CudaPromotionPosture::Promote => ExecutionCommandKind::PromoteForExecution,
+        CudaPromotionPosture::Hold | CudaPromotionPosture::Degrade => {
+            ExecutionCommandKind::HoldForReview
+        }
+        CudaPromotionPosture::Fallback => ExecutionCommandKind::RouteToFallback,
     }
 }
 
@@ -430,6 +460,29 @@ fn collect_compute_reason_ids(evidence: &[AdmissionEnvelope]) -> Vec<String> {
                 ids.push(backend_canonicalization_id(summary.canonicalization_posture).to_string());
                 ids.push(backend_parity_oracle_id(summary.parity_oracle).to_string());
             }
+            ComputeEvidenceSummary::CudaBackendPromotion(summary) => {
+                ids.push(backend_admissibility_id(summary.backend_admissibility).to_string());
+                ids.push(backend_runtime_track_id(summary.runtime_track).to_string());
+                ids.push(backend_layout_version_id(summary.layout_version).to_string());
+                ids.push(host_device_transfer_semantics_id(summary.transfer_semantics).to_string());
+                ids.push(backend_precision_mode_id(summary.precision_mode).to_string());
+                ids.push(backend_packing_policy_id(summary.packing_policy).to_string());
+                ids.push(summary.canonicalization_boundary.clone());
+                ids.push(backend_layout_compatibility_id(summary.layout_compatibility).to_string());
+                ids.push(cuda_parity_budget_id(summary.parity_budget));
+                ids.push(format!(
+                    "observed_delta_units:{}",
+                    summary.observed_delta_units
+                ));
+                ids.push(cuda_canonicalization_posture_id(summary.canonicalization).to_string());
+                ids.push(cuda_workload_eligibility_id(summary.workload_eligibility).to_string());
+                ids.push(
+                    cuda_workload_eligibility_reason_id(summary.eligibility_reason).to_string(),
+                );
+                ids.push(cuda_parity_status_id(summary.parity_status).to_string());
+                ids.push(cuda_promotion_posture_id(summary.promotion_posture).to_string());
+                ids.push(cuda_promotion_reason_id(summary.promotion_reason).to_string());
+            }
             ComputeEvidenceSummary::BackendAdmissibility {
                 admissibility,
                 reason,
@@ -547,18 +600,6 @@ fn is_cache_blocked(summary: &CachePolicySummary) -> bool {
         || summary.coherence_posture == CacheCoherencePosture::DependencyMissing
 }
 
-fn has_backend_admissible(evidence: &[AdmissionEnvelope]) -> bool {
-    evidence.iter().any(|envelope| {
-        matches!(
-            envelope.summary,
-            ComputeEvidenceSummary::BackendAdmissibility {
-                admissibility: BackendAdmissibility::Admissible,
-                ..
-            }
-        )
-    })
-}
-
 fn has_backend_inadmissible(evidence: &[AdmissionEnvelope]) -> bool {
     evidence.iter().any(|envelope| {
         matches!(
@@ -571,18 +612,30 @@ fn has_backend_inadmissible(evidence: &[AdmissionEnvelope]) -> bool {
     })
 }
 
-fn has_backend_runtime_review(evidence: &[AdmissionEnvelope]) -> bool {
-    evidence.iter().any(|envelope| {
-        matches!(
-            envelope.summary,
-            ComputeEvidenceSummary::BackendRuntimePosture(ref summary)
-                if summary.layout_posture == BackendMemoryLayoutPosture::VersionMismatch
-                    || summary.precision_posture == PrecisionPosture::Mismatch
-                    || summary.canonicalization_posture
-                        != BackendCanonicalizationPosture::BackendIndependent
-                    || summary.parity_oracle != BackendParityOracle::CpuReference
-        )
+fn cuda_promotion_summary(evidence: &[AdmissionEnvelope]) -> Option<&CudaBackendPromotionSummary> {
+    evidence.iter().find_map(|envelope| {
+        if let ComputeEvidenceSummary::CudaBackendPromotion(summary) = &envelope.summary {
+            Some(summary)
+        } else {
+            None
+        }
     })
+}
+
+fn cuda_promotion_routing_reason(reason: CudaPromotionReason) -> RoutingReason {
+    match reason {
+        CudaPromotionReason::PromotionEligible => RoutingReason::CudaPromotionEligible,
+        CudaPromotionReason::ParityWithinBudget => RoutingReason::CudaParityWithinBudget,
+        CudaPromotionReason::BackendInadmissible => RoutingReason::CudaBackendInadmissible,
+        CudaPromotionReason::WorkloadIneligible => RoutingReason::CudaWorkloadIneligible,
+        CudaPromotionReason::LayoutReviewRequired => RoutingReason::CudaLayoutReviewRequired,
+        CudaPromotionReason::LayoutBreaking => RoutingReason::CudaLayoutBreaking,
+        CudaPromotionReason::CanonicalizationRequired => {
+            RoutingReason::CudaCanonicalizationRequired
+        }
+        CudaPromotionReason::NonCanonicalizable => RoutingReason::CudaNonCanonicalizable,
+        CudaPromotionReason::ParityOverBudget => RoutingReason::CudaParityOverBudget,
+    }
 }
 
 pub fn routing_reason_id(reason: RoutingReason) -> &'static str {
@@ -602,6 +655,16 @@ pub fn routing_reason_id(reason: RoutingReason) -> &'static str {
         RoutingReason::BackendAdmissibilityMissing => "backend_admissibility_missing",
         RoutingReason::BackendInadmissible => "backend_inadmissible",
         RoutingReason::BackendRuntimeNeedsParity => "backend_runtime_needs_parity",
+        RoutingReason::CudaPromotionEvidenceMissing => "cuda_promotion_evidence_missing",
+        RoutingReason::CudaPromotionEligible => "cuda_promotion_eligible",
+        RoutingReason::CudaBackendInadmissible => "cuda_backend_inadmissible",
+        RoutingReason::CudaWorkloadIneligible => "cuda_workload_ineligible",
+        RoutingReason::CudaLayoutReviewRequired => "cuda_layout_review_required",
+        RoutingReason::CudaLayoutBreaking => "cuda_layout_breaking",
+        RoutingReason::CudaCanonicalizationRequired => "cuda_canonicalization_required",
+        RoutingReason::CudaNonCanonicalizable => "cuda_non_canonicalizable",
+        RoutingReason::CudaParityWithinBudget => "cuda_parity_within_budget",
+        RoutingReason::CudaParityOverBudget => "cuda_parity_over_budget",
         RoutingReason::AcceleratedRouteRequiresTypedEvidence => {
             "accelerated_route_requires_typed_evidence"
         }
@@ -642,6 +705,10 @@ fn governance_reason_id(reason: GovernanceReason) -> &'static str {
         GovernanceReason::ReadinessBlocked => "readiness_blocked",
         GovernanceReason::BackendRuntimeReady => "backend_runtime_ready",
         GovernanceReason::BackendRuntimeNeedsParity => "backend_runtime_needs_parity",
+        GovernanceReason::CudaPromotionEligible => "cuda_promotion_eligible",
+        GovernanceReason::CudaPromotionNeedsReview => "cuda_promotion_needs_review",
+        GovernanceReason::CudaPromotionDegraded => "cuda_promotion_degraded",
+        GovernanceReason::CudaPromotionFallback => "cuda_promotion_fallback",
         GovernanceReason::GenericArtifactNeedsReview => "generic_artifact_needs_review",
         GovernanceReason::EvidenceNonComparable => "evidence_non_comparable",
     }
@@ -755,5 +822,119 @@ fn backend_admissibility_id(admissibility: BackendAdmissibility) -> &'static str
     match admissibility {
         BackendAdmissibility::Admissible => "admissible",
         BackendAdmissibility::Inadmissible => "inadmissible",
+    }
+}
+
+fn backend_runtime_track_id(track: BackendRuntimeTrack) -> &'static str {
+    match track {
+        BackendRuntimeTrack::CpuReference => "cpu_reference",
+        BackendRuntimeTrack::CudaOptimized => "cuda_optimized",
+    }
+}
+
+fn backend_layout_version_id(version: BackendLayoutVersion) -> &'static str {
+    match version {
+        BackendLayoutVersion::HostCanonicalV0 => "host_canonical_v0",
+        BackendLayoutVersion::CudaDeviceTensorV0 => "cuda_device_tensor_v0",
+    }
+}
+
+fn host_device_transfer_semantics_id(semantics: HostDeviceTransferSemantics) -> &'static str {
+    match semantics {
+        HostDeviceTransferSemantics::HostLocal => "host_local",
+        HostDeviceTransferSemantics::HostDeviceRoundTrip => "host_device_round_trip",
+        HostDeviceTransferSemantics::DeviceOnlyNoCanonicalReturn => {
+            "device_only_no_canonical_return"
+        }
+    }
+}
+
+fn backend_precision_mode_id(mode: BackendPrecisionMode) -> &'static str {
+    match mode {
+        BackendPrecisionMode::DeterministicReference => "deterministic_reference",
+        BackendPrecisionMode::Float32Deterministic => "float32_deterministic",
+        BackendPrecisionMode::Float64Deterministic => "float64_deterministic",
+        BackendPrecisionMode::MixedPrecisionExplicit => "mixed_precision_explicit",
+    }
+}
+
+fn backend_packing_policy_id(policy: BackendPackingPolicy) -> &'static str {
+    match policy {
+        BackendPackingPolicy::CanonicalHost => "canonical_host",
+        BackendPackingPolicy::DeviceLocalContiguous => "device_local_contiguous",
+        BackendPackingPolicy::ExplicitTensorPacked => "explicit_tensor_packed",
+    }
+}
+
+fn backend_layout_compatibility_id(compatibility: BackendLayoutCompatibility) -> &'static str {
+    match compatibility {
+        BackendLayoutCompatibility::Compatible => "compatible",
+        BackendLayoutCompatibility::Canonicalizable => "canonicalizable",
+        BackendLayoutCompatibility::ReviewRequired => "review_required",
+        BackendLayoutCompatibility::Breaking => "breaking",
+    }
+}
+
+fn cuda_parity_budget_id(budget: CudaParityBudget) -> String {
+    match budget {
+        CudaParityBudget::Exact => "exact".to_string(),
+        CudaParityBudget::BoundedUnits { max_delta_units } => {
+            format!("bounded_units:{max_delta_units}")
+        }
+    }
+}
+
+fn cuda_canonicalization_posture_id(posture: CudaCanonicalizationPosture) -> &'static str {
+    match posture {
+        CudaCanonicalizationPosture::Canonicalized => "canonicalized",
+        CudaCanonicalizationPosture::RematerializationRequired => "rematerialization_required",
+        CudaCanonicalizationPosture::NonCanonicalizable => "non_canonicalizable",
+    }
+}
+
+fn cuda_workload_eligibility_id(eligibility: CudaWorkloadEligibility) -> &'static str {
+    match eligibility {
+        CudaWorkloadEligibility::Eligible => "eligible",
+        CudaWorkloadEligibility::Ineligible => "ineligible",
+    }
+}
+
+fn cuda_workload_eligibility_reason_id(reason: CudaWorkloadEligibilityReason) -> &'static str {
+    match reason {
+        CudaWorkloadEligibilityReason::EngineWorkloadEligible => "engine_workload_eligible",
+        CudaWorkloadEligibilityReason::BackendInadmissible => "backend_inadmissible",
+        CudaWorkloadEligibilityReason::RuntimeTrackNotCuda => "runtime_track_not_cuda",
+        CudaWorkloadEligibilityReason::WorkloadNotCudaEligible => "workload_not_cuda_eligible",
+    }
+}
+
+fn cuda_parity_status_id(status: CudaParityStatus) -> &'static str {
+    match status {
+        CudaParityStatus::ParityClean => "parity_clean",
+        CudaParityStatus::ParityWithinBudget => "parity_within_budget",
+        CudaParityStatus::ParityOverBudget => "parity_over_budget",
+    }
+}
+
+fn cuda_promotion_posture_id(posture: CudaPromotionPosture) -> &'static str {
+    match posture {
+        CudaPromotionPosture::Promote => "promote",
+        CudaPromotionPosture::Hold => "hold",
+        CudaPromotionPosture::Degrade => "degrade",
+        CudaPromotionPosture::Fallback => "fallback",
+    }
+}
+
+fn cuda_promotion_reason_id(reason: CudaPromotionReason) -> &'static str {
+    match reason {
+        CudaPromotionReason::PromotionEligible => "promotion_eligible",
+        CudaPromotionReason::ParityWithinBudget => "parity_within_budget",
+        CudaPromotionReason::BackendInadmissible => "backend_inadmissible",
+        CudaPromotionReason::WorkloadIneligible => "workload_ineligible",
+        CudaPromotionReason::LayoutReviewRequired => "layout_review_required",
+        CudaPromotionReason::LayoutBreaking => "layout_breaking",
+        CudaPromotionReason::CanonicalizationRequired => "canonicalization_required",
+        CudaPromotionReason::NonCanonicalizable => "non_canonicalizable",
+        CudaPromotionReason::ParityOverBudget => "parity_over_budget",
     }
 }

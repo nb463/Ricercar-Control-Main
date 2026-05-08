@@ -8,13 +8,17 @@ pub use admission::{
     admit_evidence, AdmissionEnvelope, AdmissionOutcome, AdmissionRecord, AdmissionRejectionReason,
 };
 pub use evidence::{
-    BackendAdmissibility, BackendCanonicalizationPosture, BackendMemoryLayoutPosture,
-    BackendParityOracle, BackendRole, BackendRuntimePostureSummary, CacheBlockedReason,
-    CacheCoherencePosture, CacheLifecycleState, CachePolicySummary, CacheReuseAdmissibility,
-    CompatibilityClassification, CompatibilityGateSummary, ComputeEvidenceKind,
-    ComputeEvidenceSummary, ComputeSemanticStatus, ComputeValidationPosture, EvidenceProvenance,
-    EvidenceReadiness, PluginCompatibility, PluginCompatibilityReason, PluginCompatibilitySummary,
-    PrecisionPosture, RecomputeReason, ReleaseReadinessSummary,
+    BackendAdmissibility, BackendCanonicalizationPosture, BackendLayoutCompatibility,
+    BackendLayoutVersion, BackendMemoryLayoutPosture, BackendPackingPolicy, BackendParityOracle,
+    BackendPrecisionMode, BackendRole, BackendRuntimePostureSummary, BackendRuntimeTrack,
+    CacheBlockedReason, CacheCoherencePosture, CacheLifecycleState, CachePolicySummary,
+    CacheReuseAdmissibility, CompatibilityClassification, CompatibilityGateSummary,
+    ComputeEvidenceKind, ComputeEvidenceSummary, ComputeSemanticStatus, ComputeValidationPosture,
+    CudaBackendPromotionSummary, CudaCanonicalizationPosture, CudaParityBudget, CudaParityStatus,
+    CudaPromotionPosture, CudaPromotionReason, CudaWorkloadEligibility,
+    CudaWorkloadEligibilityReason, EvidenceProvenance, EvidenceReadiness,
+    HostDeviceTransferSemantics, PluginCompatibility, PluginCompatibilityReason,
+    PluginCompatibilitySummary, PrecisionPosture, RecomputeReason, ReleaseReadinessSummary,
 };
 pub use explanation::{
     assemble_explanation_bundle, ControlTrace, DiagramEvidenceFlow, DiagramHint,

@@ -62,8 +62,8 @@ PR E adds the first narrow operational Control runtime:
 - routing decisions and execution commands
 - orchestration state and audit records
 - structured routing explanation payloads for every consequential act
-- typed consumption of Compute cache posture, compatibility-gate posture, release readiness, backend admissibility, backend runtime posture, and plugin compatibility evidence
-- fail-closed accelerated-routing doctrine when admissibility, readiness, or compatibility evidence is missing or blocked
+- typed consumption of Compute cache posture, compatibility-gate posture, release readiness, PR37 CUDA/backend promotion posture, backend admissibility, backend runtime posture, and plugin compatibility evidence
+- fail-closed accelerated-routing doctrine when PR37 CUDA/backend promotion evidence, release readiness, or compatibility evidence is missing or blocked
 
 PR E does not add distributed scheduling, product UX, deployment policy, release governance, compute kernels, recomputation logic, or full PR37 backend/layout governance.
 
