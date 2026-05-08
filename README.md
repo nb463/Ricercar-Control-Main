@@ -86,15 +86,18 @@ Product and app layers own:
 
 This boundary is not a weakness. It is a trust-preserving feature.
 
-## Current Scope
+## Current State And Sequencing
 
-PR A establishes the constitutional skeleton for Ricercar-Control. PR B/C adds the first admission and disposition governance boundary. Both are intentionally docs-first.
+The canonical cross-repo sequencing now lives in `RICERCAR_INTEGRATED_ARCHITECTURE_AND_FINISH_PLAN.md` at the workspace root. This repo's docs describe Control's owned boundaries and local validation path; the integrated plan is the source of truth for what comes next across Compute, Control, and QDisCoCirc.
 
-PR D adds the first narrow Rust implementation for Control-side admission records, trust/disposition assignment, and explanation/surfacing bundles. It is runnable and testable, but it is not an orchestration runtime, scheduler, global policy engine, distributed system, or product workflow.
+PR A through PR F are the landed Control constitution and operational substrate:
 
-PR E adds the first narrow routing/orchestration runtime slice. It turns admitted evidence into explicit routing decisions, execution commands, orchestration audit records, and routing explanations while preserving the rule that Compute evidence is consumed rather than regenerated.
+- PR A and PR B/C define ownership, admission, and disposition doctrine.
+- PR D implements admission, governance, explanation, and surfacing grammar.
+- PR E implements the narrow routing/orchestration runtime and PR37-aware accelerated routing consumption.
+- PR F implements Control release-readiness, operational governance, transition guards, incident posture, and rollback/degrade/hold discipline.
 
-PR F adds the first operational hardening and release-governance slice. It makes Control release readiness, policy-version compatibility, operational hold/degrade/fallback/rollback posture, and transition guards typed and auditable without adding deployment automation.
+With that constitutional tail in place, Control should stay in support mode while the center of gravity moves to detector proof and kernel reality. Future Control changes should be small, evidence-consuming slices driven by real detector outputs, not new Control-side semantic invention.
 
 ## Documents
 
@@ -107,3 +110,11 @@ PR F adds the first operational hardening and release-governance slice. It makes
 - [Control Orchestration And Routing Runtime v0](docs/CONTROL_ORCHESTRATION_AND_ROUTING_RUNTIME_V0.md)
 - [Control Operational Hardening And Release Governance v0](docs/CONTROL_OPERATIONAL_HARDENING_AND_RELEASE_GOVERNANCE_V0.md)
 - [QDisCoCirc Probe Model v0](docs/qdiscocirc/QDISCOCIRC_PROBE_MODEL_V0.md)
+
+## Local Validation
+
+GitHub CI runs a small trust lane for formatting plus PR D/PR E smoke tests, and a proof lane for the full test suite plus clippy. The same gates can be run locally:
+
+- `cargo fmt --check`
+- `cargo test -q`
+- `cargo clippy --all-targets -- -D warnings -A clippy::too_many_arguments`

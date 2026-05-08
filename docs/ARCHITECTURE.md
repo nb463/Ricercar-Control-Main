@@ -2,6 +2,8 @@
 
 Ricercar-Control is the Compute Plane consumer and workflow-truth owner for Ricercar systems. It sits between Ricercar-Compute and product/app layers.
 
+This document defines Control's boundary and ownership model. Cross-repo sequencing and current program priority are governed by `RICERCAR_INTEGRATED_ARCHITECTURE_AND_FINISH_PLAN.md` at the workspace root; that plan now treats PR E/PR F as landed enabling infrastructure and moves the main frontier to detector proof and kernel reality.
+
 ## Layer Split
 
 ### Ricercar-Compute

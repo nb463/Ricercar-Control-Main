@@ -1,10 +1,10 @@
 # Ricercar-Control Roadmap
 
-Ricercar-Control starts after the current Ricercar-Compute artifact-boundary and local-cache/recompute tranches, with constitutional boundaries before runtime machinery.
+Ricercar-Control is now past its constitutional and first operational build-out. The canonical cross-repo sequencing lives in `RICERCAR_INTEGRATED_ARCHITECTURE_AND_FINISH_PLAN.md` at the workspace root; this roadmap records Control's landed responsibilities and the narrow maintenance/support posture that should follow.
 
 ## PR A: Constitutional Skeleton And Boundary Ownership
 
-Status: foundation.
+Status: landed foundation.
 
 PR A establishes:
 
@@ -37,7 +37,7 @@ PR B/C remains docs-first. It does not add a runtime, validator implementation, 
 
 ## PR D: Explanation Assembly And Surfacing Grammar v0
 
-Status: current slice.
+Status: landed.
 
 PR D adds the first narrow runnable Control implementation:
 
@@ -54,7 +54,7 @@ PR D does not add scheduling, orchestration, product UX, deployment policy, org-
 
 ## PR E: Orchestration, Scheduling, And Routing Runtime v0
 
-Status: current slice.
+Status: landed.
 
 PR E adds the first narrow operational Control runtime:
 
@@ -69,7 +69,7 @@ PR E does not add distributed scheduling, product UX, deployment policy, release
 
 ## PR F: Operational Hardening And Release Governance v0
 
-Status: current slice.
+Status: landed.
 
 PR F adds the first typed operational hardening layer for the Control decision plane:
 
@@ -82,20 +82,21 @@ PR F adds the first typed operational hardening layer for the Control decision p
 
 PR F does not add deployment automation, cloud rollout tooling, product UX, Compute truth recomputation, or org-wide release management.
 
-## Near-Term Direction
+## Current Direction
 
-Future slices should proceed only after PR A, PR B/C, PR D, PR E, and PR F preserve the ownership, admission, governance, explanation, routing, and operational hardening model.
+PR A through PR F are no longer the live critical path. They are the landed Control substrate that lets Ricercar consume Compute evidence, route consequential workflow state, explain decisions, and govern operational posture without reimplementing Compute semantics.
 
-Likely next areas:
+With the QDisCoCirc Q3 probe tail already landed and the remaining Control CI/doc cleanup closing out, the center of gravity now moves to detector proof and kernel reality. Control should remain in support mode unless real detector outputs require a small evidence-consuming extension.
 
-- workflow audit records
-- policy hooks that remain Control-owned and compute-informed
+Near-term Control work should be limited to:
 
-These should be added in small slices. Each slice must preserve the split between compute evidence, workflow truth, and product action.
+- keeping CI, tests, and docs current;
+- preserving the PR E routing guarantee that PR37-native CUDA promotion evidence drives accelerated routing when present;
+- consuming new detector evidence explicitly when the Compute detector program produces it.
 
 ## Later Work
 
-Later work may include broader runtime services, product integrations, and deployment-specific operations. Those are not PR A through PR F.
+Later work may include broader runtime services, product integrations, deployment-specific operations, and rollout governance for real accelerated detector workloads. Those should be driven by measured detector needs rather than by Control-side platform expansion.
 
 The roadmap should not pull compute-kernel logic into Control or business workflow state into Compute.
 

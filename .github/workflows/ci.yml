@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  trust-lane:
+    name: trust lane
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Formatting
+        run: cargo fmt --check
+
+      - name: Explanation smoke
+        run: cargo test -q -p ricercar_control --test pr_d_explanation
+
+      - name: Routing smoke
+        run: cargo test -q -p ricercar_control --test pr_e_routing
+
+  proof-lane:
+    name: proof lane
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Full test suite
+        run: cargo test -q
+
+      - name: Clippy proof gate
+        run: cargo clippy --all-targets -- -D warnings -A clippy::too_many_arguments
