@@ -1,0 +1,10 @@
+[package]
+name = "ricercar_control_qdiscocirc_adapter"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+ricercar_control = { path = "../.." }

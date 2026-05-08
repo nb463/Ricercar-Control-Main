@@ -3,6 +3,11 @@ name = "ricercar_control"
 version = "0.1.0"
 edition = "2021"
 
+[workspace]
+members = [".", "crates/ricercar_control_qdiscocirc_adapter"]
+default-members = [".", "crates/ricercar_control_qdiscocirc_adapter"]
+resolver = "2"
+
 [lib]
 path = "src/lib.rs"
 
