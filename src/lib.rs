@@ -2,6 +2,7 @@ pub mod admission;
 pub mod evidence;
 pub mod explanation;
 pub mod governance;
+pub mod operational_governance;
 pub mod orchestration;
 
 pub use admission::{
@@ -28,6 +29,18 @@ pub use explanation::{
 };
 pub use governance::{
     govern_admission, Disposition, GovernanceReason, GovernanceRecord, TrustClass,
+};
+pub use operational_governance::{
+    control_release_readiness_report, control_release_readiness_status_id,
+    evaluate_governance_trace_scenario, evaluate_governance_transition,
+    evaluate_system_release_governance, policy_compatibility_posture_id,
+    system_release_governance_reason_id, system_release_posture_id, ControlReleaseReadinessInput,
+    ControlReleaseReadinessReason, ControlReleaseReadinessReport, ControlReleaseReadinessStatus,
+    GovernanceIncident, GovernanceIncidentKind, GovernanceIncidentResponse,
+    GovernanceOperationalState, GovernancePolicySet, GovernanceTraceScenario,
+    GovernanceTransitionGuard, GovernanceTransitionGuardOutcome, GovernanceTransitionGuardReason,
+    GovernanceTransitionRequest, PolicyCompatibilityPosture, SystemReleaseGovernanceInput,
+    SystemReleaseGovernanceReason, SystemReleaseGovernanceRecord, SystemReleasePosture,
 };
 pub use orchestration::{
     execution_command_kind_id, route_work_item, routing_reason_id, ExecutionCommand,

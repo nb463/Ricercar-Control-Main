@@ -94,6 +94,8 @@ PR D adds the first narrow Rust implementation for Control-side admission record
 
 PR E adds the first narrow routing/orchestration runtime slice. It turns admitted evidence into explicit routing decisions, execution commands, orchestration audit records, and routing explanations while preserving the rule that Compute evidence is consumed rather than regenerated.
 
+PR F adds the first operational hardening and release-governance slice. It makes Control release readiness, policy-version compatibility, operational hold/degrade/fallback/rollback posture, and transition guards typed and auditable without adding deployment automation.
+
 ## Documents
 
 - [Architecture](docs/ARCHITECTURE.md)
@@ -103,4 +105,5 @@ PR E adds the first narrow routing/orchestration runtime slice. It turns admitte
 - [Control Admission And Disposition Boundary v0](docs/CONTROL_ADMISSION_AND_DISPOSITION_BOUNDARY_V0.md)
 - [Control Explanation And Surfacing Grammar v0](docs/CONTROL_EXPLANATION_AND_SURFACING_GRAMMAR_V0.md)
 - [Control Orchestration And Routing Runtime v0](docs/CONTROL_ORCHESTRATION_AND_ROUTING_RUNTIME_V0.md)
+- [Control Operational Hardening And Release Governance v0](docs/CONTROL_OPERATIONAL_HARDENING_AND_RELEASE_GOVERNANCE_V0.md)
 - [QDisCoCirc Probe Model v0](docs/qdiscocirc/QDISCOCIRC_PROBE_MODEL_V0.md)

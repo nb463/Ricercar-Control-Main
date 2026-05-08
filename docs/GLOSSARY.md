@@ -120,6 +120,30 @@ A Control-owned routing consequence such as promote for execution, hold for revi
 
 The workflow-auditable record of a routing decision, execution command, orchestration state, explanation bundle, and routing explanation payload.
 
+## Control Release Readiness
+
+A Control-owned report about whether the decision plane itself is ready, needs review, or is blocked for release. It covers policy presence, policy-version compatibility, audit expectations, governance trace corpus posture, transition guards, upstream Compute evidence consumption, and rollback doctrine.
+
+## System Release Governance Posture
+
+The Control-owned operational posture that combines Control readiness, Compute compatibility/readiness evidence, PR37 CUDA/backend promotion evidence, orchestration audit completeness, and incident posture into outcomes such as promotable, hold for review, degraded but governable, fallback-only, rollback-required, or blocked.
+
+## Policy Compatibility
+
+The Control-owned review of governance policy version movement. Policy compatibility may be compatible, review-required, or breaking; it is workflow/governance truth, not compute artifact truth.
+
+## Governance Incident
+
+A typed Control-owned operational event that may require hold, degradation, escalation, rollback, or blocking. Incidents are auditable workflow facts, not compute semantic judgments.
+
+## Rollback Required
+
+A Control-owned operational posture indicating that prior or current workflow consequence must be rolled back before ordinary promotion can resume.
+
+## Transition Guard
+
+A typed Control check that prevents consequential workflow-truth state transitions from occurring without audit completeness, explanation payloads, evidence references, and explicit review where recovery to promotion is requested.
+
 ## Routing Explanation Payload
 
 The structured explanation emitted for a consequential routing act. It preserves admitted and rejected evidence keys, Compute-owned reason ids, Control-owned routing reasons, and an audit reference.

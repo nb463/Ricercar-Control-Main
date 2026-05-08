@@ -67,9 +67,24 @@ PR E adds the first narrow operational Control runtime:
 
 PR E does not add distributed scheduling, product UX, deployment policy, release governance, compute kernels, recomputation logic, or full PR37 backend/layout governance.
 
+## PR F: Operational Hardening And Release Governance v0
+
+Status: current slice.
+
+PR F adds the first typed operational hardening layer for the Control decision plane:
+
+- Control release-readiness reports for policy presence, audit requirements, governance trace corpus, transition guards, upstream Compute evidence consumption, and rollback doctrine
+- policy-version compatibility review with compatible, review-required, and breaking postures
+- system release-governance posture over Compute compatibility, Compute release readiness, PR37 CUDA/backend promotion evidence, Control readiness, orchestration audit completeness, and Control-owned incident posture
+- typed incident responses for hold, degrade, escalation, rollback required, rollback in effect, and blocked operation
+- workflow-truth transition guards that prevent silent promotion through missing audit, missing explanations, missing evidence, or unreviewed recovery from hold/degrade/fallback/rollback
+- a governance-state trace corpus covering promotion, hold, escalation, rollback, incompatibility, and degraded operation
+
+PR F does not add deployment automation, cloud rollout tooling, product UX, Compute truth recomputation, or org-wide release management.
+
 ## Near-Term Direction
 
-Future slices should proceed only after PR A, PR B/C, PR D, and PR E preserve the ownership, admission, governance, explanation, and routing model.
+Future slices should proceed only after PR A, PR B/C, PR D, PR E, and PR F preserve the ownership, admission, governance, explanation, routing, and operational hardening model.
 
 Likely next areas:
 
@@ -80,7 +95,7 @@ These should be added in small slices. Each slice must preserve the split betwee
 
 ## Later Work
 
-Later work may include orchestration, scheduling, broader runtime services, product integrations, and operational hardening. Those are not PR A, PR B/C, or PR D.
+Later work may include broader runtime services, product integrations, and deployment-specific operations. Those are not PR A through PR F.
 
 The roadmap should not pull compute-kernel logic into Control or business workflow state into Compute.
 
