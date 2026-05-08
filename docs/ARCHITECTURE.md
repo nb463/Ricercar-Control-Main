@@ -137,6 +137,16 @@ Every consequential routing act must emit an explanation payload and audit recor
 
 Accelerated or CUDA-leaning routing fails closed unless the needed typed evidence exists. PR37 CUDA promotion evidence, clean compatibility posture, and release readiness are routing-relevant evidence; missing or blocked evidence cannot silently become route eligibility.
 
+## Operational Hardening And Release Governance Doctrine
+
+PR F makes the Control decision plane itself governable and releasable.
+
+Control release governance consumes Compute compatibility, release-readiness, cache, and PR37 CUDA/backend promotion evidence. It does not recompute those facts. Control adds its own operational truth: policy-version compatibility, audit completeness, governance trace corpus posture, transition guards, incident posture, rollback posture, and whether the decision plane is promotable, held, degraded, fallback-only, rollback-required, or blocked.
+
+Rollback, degrade, hold, escalation, and fallback are Control workflow consequences. Compute evidence can justify them, but it does not own them.
+
+Operational transitions must be auditable. Control may not silently move from hold, degraded, fallback, rollback, or blocked posture back to promotion without explicit review and preserved evidence references.
+
 ## Workflow Truth Doctrine
 
 Workflow truth is the record of operational decision state.
