@@ -91,6 +91,8 @@ PR A establishes the constitutional skeleton for Ricercar-Control. PR B/C adds t
 
 PR D adds the first narrow Rust implementation for Control-side admission records, trust/disposition assignment, and explanation/surfacing bundles. It is runnable and testable, but it is not an orchestration runtime, scheduler, global policy engine, distributed system, or product workflow.
 
+PR E adds the first narrow routing/orchestration runtime slice. It turns admitted evidence into explicit routing decisions, execution commands, orchestration audit records, and routing explanations while preserving the rule that Compute evidence is consumed rather than regenerated.
+
 ## Documents
 
 - [Architecture](docs/ARCHITECTURE.md)
@@ -99,3 +101,4 @@ PR D adds the first narrow Rust implementation for Control-side admission record
 - [Glossary](docs/GLOSSARY.md)
 - [Control Admission And Disposition Boundary v0](docs/CONTROL_ADMISSION_AND_DISPOSITION_BOUNDARY_V0.md)
 - [Control Explanation And Surfacing Grammar v0](docs/CONTROL_EXPLANATION_AND_SURFACING_GRAMMAR_V0.md)
+- [Control Orchestration And Routing Runtime v0](docs/CONTROL_ORCHESTRATION_AND_ROUTING_RUNTIME_V0.md)

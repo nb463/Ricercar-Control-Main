@@ -2,8 +2,8 @@ use crate::admission::{AdmissionEnvelope, AdmissionOutcome, AdmissionRecord};
 use crate::evidence::{
     BackendAdmissibility, BackendCanonicalizationPosture, BackendMemoryLayoutPosture,
     BackendParityOracle, CacheLifecycleState, CacheReuseAdmissibility, CompatibilityClassification,
-    ComputeEvidenceSummary, ComputeSemanticStatus, EvidenceReadiness, PluginCompatibility,
-    PrecisionPosture,
+    ComputeEvidenceSummary, ComputeSemanticStatus, CudaPromotionPosture, EvidenceReadiness,
+    PluginCompatibility, PrecisionPosture,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -46,6 +46,10 @@ pub enum GovernanceReason {
     ReadinessBlocked,
     BackendRuntimeReady,
     BackendRuntimeNeedsParity,
+    CudaPromotionEligible,
+    CudaPromotionNeedsReview,
+    CudaPromotionDegraded,
+    CudaPromotionFallback,
     GenericArtifactNeedsReview,
     EvidenceNonComparable,
 }
@@ -174,6 +178,29 @@ pub fn govern_admission(
                 ready_record(envelope, GovernanceReason::BackendRuntimeReady)
             }
         }
+        ComputeEvidenceSummary::CudaBackendPromotion(summary) => match summary.promotion_posture {
+            CudaPromotionPosture::Promote => {
+                ready_record(envelope, GovernanceReason::CudaPromotionEligible)
+            }
+            CudaPromotionPosture::Hold => GovernanceRecord {
+                evidence_key: envelope.evidence_key.clone(),
+                trust_class: TrustClass::ReviewRequired,
+                disposition: Disposition::HoldForReview,
+                reasons: vec![GovernanceReason::CudaPromotionNeedsReview],
+            },
+            CudaPromotionPosture::Degrade => GovernanceRecord {
+                evidence_key: envelope.evidence_key.clone(),
+                trust_class: TrustClass::ReviewRequired,
+                disposition: Disposition::HoldForReview,
+                reasons: vec![GovernanceReason::CudaPromotionDegraded],
+            },
+            CudaPromotionPosture::Fallback => GovernanceRecord {
+                evidence_key: envelope.evidence_key.clone(),
+                trust_class: TrustClass::FallbackOnly,
+                disposition: Disposition::Fallback,
+                reasons: vec![GovernanceReason::CudaPromotionFallback],
+            },
+        },
         ComputeEvidenceSummary::GenericArtifact { .. } => GovernanceRecord {
             evidence_key: envelope.evidence_key.clone(),
             trust_class: TrustClass::ReviewRequired,
