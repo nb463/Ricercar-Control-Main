@@ -6,6 +6,14 @@ use crate::{
     },
     refs::SourceRef,
 };
+use std::collections::BTreeSet;
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+struct RolePresence {
+    saw_compute_truth: bool,
+    saw_control_truth: bool,
+    saw_probe_only: bool,
+}
 
 pub fn compare_probe_envelopes(
     before: &crate::envelope::ProbeEnvelope,
@@ -40,42 +48,14 @@ pub fn compare_probe_envelopes(
         "changed",
     ));
 
-    for after_node in &after.nodes {
-        let before_node = before
-            .nodes
-            .iter()
-            .find(|node| node.source.source_id == after_node.source.source_id);
-        match before_node {
-            Some(before_node)
-                if before_node.summary != after_node.summary
-                    || before_node.tags != after_node.tags =>
-            {
-                builder = builder.change(ProbeChange {
-                    source_id: after_node.source.source_id.clone(),
-                    before: before_node.summary.clone(),
-                    after: after_node.summary.clone(),
-                });
-            }
-            None => {
-                builder = builder.change(ProbeChange {
-                    source_id: after_node.source.source_id.clone(),
-                    before: "missing".to_string(),
-                    after: after_node.summary.clone(),
-                });
-            }
-            _ => {}
-        }
-    }
-    for before_node in &before.nodes {
-        if !after
-            .nodes
-            .iter()
-            .any(|node| node.source.source_id == before_node.source.source_id)
+    for source_id in all_source_ids(before, after) {
+        if node_signatures_for_source_id(before, &source_id)
+            != node_signatures_for_source_id(after, &source_id)
         {
             builder = builder.change(ProbeChange {
-                source_id: before_node.source.source_id.clone(),
-                before: before_node.summary.clone(),
-                after: "missing".to_string(),
+                source_id: source_id.clone(),
+                before: change_snapshot_for_source_id(before, &source_id),
+                after: change_snapshot_for_source_id(after, &source_id),
             });
         }
     }
@@ -100,21 +80,23 @@ pub fn summarize_probe_delta(
         .changed
         .iter()
         .map(|change| change.source_id.clone())
-        .collect::<Vec<_>>();
-    let mut compute_truth_refs = Vec::new();
-    let mut control_consequence_refs = Vec::new();
+        .collect::<BTreeSet<_>>();
+    let mut compute_truth_refs = BTreeSet::new();
+    let mut control_consequence_refs = BTreeSet::new();
     let mut saw_probe_only = false;
 
     for source_id in &changed_source_ids {
-        let node = after
-            .nodes
-            .iter()
-            .chain(&before.nodes)
-            .find(|node| node.source.source_id == *source_id);
-        match node.map(|node| node.role) {
-            Some(ProbeNodeRole::ComputeTruth) => compute_truth_refs.push(source_id.clone()),
-            Some(ProbeNodeRole::ControlTruth) => control_consequence_refs.push(source_id.clone()),
-            Some(ProbeNodeRole::ProbeOnly) | None => saw_probe_only = true,
+        let before_roles = role_presence_for_source_id(before, source_id);
+        let after_roles = role_presence_for_source_id(after, source_id);
+
+        if before_roles.saw_compute_truth || after_roles.saw_compute_truth {
+            compute_truth_refs.insert(source_id.clone());
+        }
+        if before_roles.saw_control_truth || after_roles.saw_control_truth {
+            control_consequence_refs.insert(source_id.clone());
+        }
+        if before_roles.saw_probe_only || after_roles.saw_probe_only {
+            saw_probe_only = true;
         }
     }
 
@@ -123,7 +105,13 @@ pub fn summarize_probe_delta(
         control_consequence_refs.is_empty(),
         saw_probe_only,
     ) {
-        (true, true, false) => ProbeDeltaCause::NoChange,
+        (true, true, false) => {
+            debug_assert!(
+                changed_source_ids.is_empty(),
+                "NoChange reached with changed source ids present"
+            );
+            ProbeDeltaCause::NoChange
+        }
         (false, true, false) => ProbeDeltaCause::ComputeTruthChanged,
         (true, false, false) => ProbeDeltaCause::ControlConsequenceChanged,
         (true, true, true) => ProbeDeltaCause::ProbeOnlyChanged,
@@ -132,8 +120,87 @@ pub fn summarize_probe_delta(
 
     ProbeDeltaSummary {
         cause,
-        changed_source_ids,
-        compute_truth_refs,
-        control_consequence_refs,
+        changed_source_ids: changed_source_ids.into_iter().collect(),
+        compute_truth_refs: compute_truth_refs.into_iter().collect(),
+        control_consequence_refs: control_consequence_refs.into_iter().collect(),
+    }
+}
+
+fn all_source_ids(
+    before: &crate::envelope::ProbeEnvelope,
+    after: &crate::envelope::ProbeEnvelope,
+) -> BTreeSet<String> {
+    before
+        .nodes
+        .iter()
+        .chain(&after.nodes)
+        .map(|node| node.source.source_id.clone())
+        .collect()
+}
+
+fn node_signatures_for_source_id(
+    envelope: &crate::envelope::ProbeEnvelope,
+    source_id: &str,
+) -> Vec<String> {
+    let mut signatures = envelope
+        .nodes
+        .iter()
+        .filter(|node| node.source.source_id == source_id)
+        .map(node_signature)
+        .collect::<Vec<_>>();
+    signatures.sort();
+    signatures.dedup();
+    signatures
+}
+
+fn change_snapshot_for_source_id(
+    envelope: &crate::envelope::ProbeEnvelope,
+    source_id: &str,
+) -> String {
+    let signatures = node_signatures_for_source_id(envelope, source_id);
+    if signatures.is_empty() {
+        "missing".to_string()
+    } else {
+        signatures.join(" || ")
+    }
+}
+
+fn node_signature(node: &ProbeNode) -> String {
+    let mut tags = node.tags.clone();
+    tags.sort();
+    tags.dedup();
+    format!(
+        "role={} summary={} tags={}",
+        role_id(node.role),
+        node.summary,
+        tags.join(",")
+    )
+}
+
+fn role_presence_for_source_id(
+    envelope: &crate::envelope::ProbeEnvelope,
+    source_id: &str,
+) -> RolePresence {
+    let mut presence = RolePresence::default();
+    for role in envelope
+        .nodes
+        .iter()
+        .filter(|node| node.source.source_id == source_id)
+        .map(|node| node.role)
+    {
+        match role {
+            ProbeNodeRole::ComputeTruth => presence.saw_compute_truth = true,
+            ProbeNodeRole::ControlTruth => presence.saw_control_truth = true,
+            ProbeNodeRole::ProbeOnly => presence.saw_probe_only = true,
+        }
+    }
+    presence
+}
+
+fn role_id(role: ProbeNodeRole) -> &'static str {
+    match role {
+        ProbeNodeRole::ComputeTruth => "compute_truth",
+        ProbeNodeRole::ControlTruth => "control_truth",
+        ProbeNodeRole::ProbeOnly => "probe_only",
     }
 }

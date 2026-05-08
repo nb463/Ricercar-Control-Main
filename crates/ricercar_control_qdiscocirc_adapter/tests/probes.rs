@@ -26,7 +26,7 @@ use ricercar_control_qdiscocirc_adapter::{
         stable_probe_summary,
     },
     traces::{compare_probe_envelopes, summarize_probe_delta},
-    OperatorProbeQuestion, ProbeDeltaCause,
+    OperatorProbeQuestion, ProbeDeltaCause, ProbeNodeRole,
 };
 
 fn hash(byte: char) -> String {
@@ -664,4 +664,108 @@ fn q3_operator_view_keeps_compute_truth_and_control_consequence_refs_distinct() 
     assert!(view
         .control_consequence_refs
         .contains(&"governance/qdiscocirc-ownership-split".to_string()));
+    assert!(stable_operator_view_summary(&view).contains("question|ownership_split"));
+}
+
+#[test]
+fn degraded_release_governance_probe_explains_current_posture() {
+    let degraded = release_governance_record(
+        "degraded-walkthrough",
+        vec![
+            cache_fresh(),
+            compatibility_clean(),
+            release_ready(),
+            cuda_promotion(
+                "evidence/cuda/degraded-walkthrough",
+                CudaPromotionPosture::Degrade,
+                CudaPromotionReason::ParityWithinBudget,
+                CudaParityStatus::ParityWithinBudget,
+            ),
+        ],
+        None,
+    );
+
+    let probe = map_system_release_governance_record(&degraded);
+
+    assert!(stable_probe_summary(&probe).contains("walkthrough|show_me_why"));
+}
+
+#[test]
+fn q3_additional_operator_question_ids_are_exercised_without_expanding_corpus() {
+    let record = release_governance_record(
+        "question-ids",
+        vec![
+            cache_fresh(),
+            compatibility_clean(),
+            release_ready(),
+            cuda_promotion(
+                "evidence/cuda/question-ids",
+                CudaPromotionPosture::Promote,
+                CudaPromotionReason::PromotionEligible,
+                CudaParityStatus::ParityClean,
+            ),
+        ],
+        None,
+    );
+    let probe = map_system_release_governance_record(&record);
+
+    assert!(stable_operator_view_summary(&operator_view_for_probe(
+        "control/q3/what-changed",
+        OperatorProbeQuestion::WhatChanged,
+        &probe,
+    ))
+    .contains("question|what_changed"));
+    assert!(stable_operator_view_summary(&operator_view_for_probe(
+        "control/q3/evidence-for-consequence",
+        OperatorProbeQuestion::EvidenceForConsequence,
+        &probe,
+    ))
+    .contains("question|evidence_for_consequence"));
+}
+
+#[test]
+fn role_only_transition_is_classified_as_mixed_ownership_change() {
+    let before = map_system_release_governance_record(&release_governance_record(
+        "role-only",
+        vec![
+            cache_fresh(),
+            compatibility_clean(),
+            release_ready(),
+            cuda_promotion(
+                "evidence/cuda/role-only",
+                CudaPromotionPosture::Promote,
+                CudaPromotionReason::PromotionEligible,
+                CudaParityStatus::ParityClean,
+            ),
+        ],
+        None,
+    ));
+    let mut after = before.clone();
+
+    let source_id = after
+        .nodes
+        .iter()
+        .find(|node| node.source.source_id == "governance/qdiscocirc-role-only")
+        .map(|node| node.source.source_id.clone())
+        .expect("governance node should be present");
+    let governance_node = after
+        .nodes
+        .iter_mut()
+        .find(|node| node.source.source_id == source_id)
+        .expect("governance node should be mutable");
+    governance_node.role = ProbeNodeRole::ComputeTruth;
+
+    let delta = summarize_probe_delta(&before, &after);
+
+    assert_eq!(delta.cause, ProbeDeltaCause::MixedOwnershipChanged);
+    assert_eq!(delta.changed_source_ids, vec![source_id.clone()]);
+    assert_eq!(delta.compute_truth_refs, vec![source_id.clone()]);
+    assert_eq!(delta.control_consequence_refs, vec![source_id.clone()]);
+    assert_eq!(
+        stable_delta_summary(&delta),
+        format!(
+            "delta_cause|mixed_ownership_changed\nchanged_ref|{0}\ncompute_truth_ref|{0}\ncontrol_consequence_ref|{0}",
+            source_id
+        )
+    );
 }

@@ -639,9 +639,10 @@ fn is_blocking_or_review_governance_reason(reason: GovernanceReason) -> bool {
 
 fn walkthrough_for_release_posture(posture: SystemReleasePosture) -> ProbeWalkthroughKind {
     match posture {
-        SystemReleasePosture::Promotable => ProbeWalkthroughKind::ShowMeWhy,
+        SystemReleasePosture::Promotable | SystemReleasePosture::DegradedButGovernable => {
+            ProbeWalkthroughKind::ShowMeWhy
+        }
         SystemReleasePosture::HoldForReview
-        | SystemReleasePosture::DegradedButGovernable
         | SystemReleasePosture::FallbackOnly
         | SystemReleasePosture::RollbackRequired
         | SystemReleasePosture::Blocked => ProbeWalkthroughKind::ShowMeWhatBlockedPromotion,
