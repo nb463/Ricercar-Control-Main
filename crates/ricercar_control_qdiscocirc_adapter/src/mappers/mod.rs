@@ -1,8 +1,10 @@
 use ricercar_control::{
     execution_command_kind_id, routing_reason_id, AdmissionEnvelope, AdmissionRecord, Disposition,
     ExecutionCommandKind, ExplanationBundle, GovernanceReason, GovernanceRecord,
-    OrchestrationAuditRecord, RoutingReason, TrustClass,
+    OrchestrationAuditRecord, RoutingReason, SystemReleaseGovernanceReason,
+    SystemReleaseGovernanceRecord, SystemReleasePosture, TrustClass,
 };
+use ricercar_control::{system_release_governance_reason_id, system_release_posture_id};
 
 use crate::{
     envelope::{probe_envelope, ProbeEnvelope},
@@ -426,6 +428,121 @@ pub fn map_orchestration_audit_record(audit: &OrchestrationAuditRecord) -> Probe
         .build()
 }
 
+pub fn map_system_release_governance_record(
+    record: &SystemReleaseGovernanceRecord,
+) -> ProbeEnvelope {
+    let reason_ids = record
+        .reasons
+        .iter()
+        .copied()
+        .map(system_release_governance_reason_id)
+        .collect::<Vec<_>>();
+    let governance_node = ProbeNode::new(
+        "control/system-release-governance",
+        ProbeNodeRole::ControlTruth,
+        SourceRef::control_truth(
+            "system_release_governance_record",
+            record.governance_key.clone(),
+            Some(record.audit_ref.clone()),
+            record.evidence_keys.clone(),
+        ),
+        "system release governance posture",
+        format!(
+            "posture={} state={} policy_version={} reasons={}",
+            system_release_posture_id(record.posture),
+            governance_operational_state_id(record.operational_state),
+            record.policy_version.as_deref().unwrap_or("none"),
+            reason_ids.join(",")
+        ),
+        vec![
+            "release_governance".to_string(),
+            "workflow_consequence".to_string(),
+        ],
+    );
+    let explanation_node = ProbeNode::new(
+        "control/release-explanation",
+        ProbeNodeRole::ControlTruth,
+        SourceRef::control_truth(
+            "release_governance_explanation_ref",
+            record.explanation_ref.clone(),
+            Some(record.audit_ref.clone()),
+            record.evidence_keys.clone(),
+        ),
+        "release governance explanation reference",
+        format!(
+            "audit_ref={} explanation_ref={}",
+            record.audit_ref, record.explanation_ref
+        ),
+        vec!["release_governance_explanation".to_string()],
+    );
+    let mut builder = probe_envelope(
+        format!("probe/control/release-governance/{}", record.governance_key),
+        "Control release governance probe",
+        walkthrough_for_release_posture(record.posture),
+        "system release governance projects Control consequence over Compute evidence",
+    )
+    .node(governance_node)
+    .node(explanation_node)
+    .edge(ProbeEdge::new(
+        "control/system-release-governance",
+        "control/release-explanation",
+        ProbeEdgeKind::Explains,
+        "release governance is tied to its explanation/audit reference",
+    ));
+
+    for evidence_key in &record.evidence_keys {
+        let node_id = format!("compute/evidence/{evidence_key}");
+        builder = builder
+            .node(ProbeNode::new(
+                node_id.clone(),
+                ProbeNodeRole::ComputeTruth,
+                SourceRef::compute_evidence(
+                    "compute_evidence_consumed_by_release_governance",
+                    evidence_key.clone(),
+                    None,
+                    Some(record.audit_ref.clone()),
+                    reason_ids
+                        .iter()
+                        .map(|reason| (*reason).to_string())
+                        .collect(),
+                ),
+                "compute evidence consumed by release governance",
+                format!("evidence_key={evidence_key}"),
+                vec!["compute_evidence".to_string()],
+            ))
+            .edge(ProbeEdge::new(
+                node_id,
+                "control/system-release-governance",
+                ProbeEdgeKind::DrillsDownTo,
+                "Control release governance consumes this Compute evidence key",
+            ));
+    }
+
+    for reason in &record.reasons {
+        if is_blocking_or_review_release_reason(*reason) {
+            builder = builder.blocking_reason(system_release_governance_reason_id(*reason));
+        }
+    }
+
+    builder
+        .trace(ProbeTrace {
+            trace_id: format!("trace/{}", record.governance_key),
+            title: "System release governance drill-down".to_string(),
+            node_ids: record
+                .evidence_keys
+                .iter()
+                .map(|key| format!("compute/evidence/{key}"))
+                .chain(std::iter::once(
+                    "control/system-release-governance".to_string(),
+                ))
+                .chain(std::iter::once("control/release-explanation".to_string()))
+                .collect(),
+            summary: "compute evidence -> Control release governance -> explanation/audit ref"
+                .to_string(),
+        })
+        .build()
+}
+
 fn compute_evidence_node(envelope: &AdmissionEnvelope) -> ProbeNode {
     ProbeNode::new(
         "compute/evidence",
@@ -518,6 +635,53 @@ fn is_blocking_or_review_governance_reason(reason: GovernanceReason) -> bool {
             | GovernanceReason::GenericArtifactNeedsReview
             | GovernanceReason::EvidenceNonComparable
     )
+}
+
+fn walkthrough_for_release_posture(posture: SystemReleasePosture) -> ProbeWalkthroughKind {
+    match posture {
+        SystemReleasePosture::Promotable | SystemReleasePosture::DegradedButGovernable => {
+            ProbeWalkthroughKind::ShowMeWhy
+        }
+        SystemReleasePosture::HoldForReview
+        | SystemReleasePosture::FallbackOnly
+        | SystemReleasePosture::RollbackRequired
+        | SystemReleasePosture::Blocked => ProbeWalkthroughKind::ShowMeWhatBlockedPromotion,
+    }
+}
+
+fn is_blocking_or_review_release_reason(reason: SystemReleaseGovernanceReason) -> bool {
+    matches!(
+        reason,
+        SystemReleaseGovernanceReason::ControlReadinessNeedsReview
+            | SystemReleaseGovernanceReason::ControlReadinessBlocked
+            | SystemReleaseGovernanceReason::ComputeCompatibilityGateBlocking
+            | SystemReleaseGovernanceReason::ComputeReleaseNeedsReview
+            | SystemReleaseGovernanceReason::ComputeReleaseBlocked
+            | SystemReleaseGovernanceReason::BackendRolloutHold
+            | SystemReleaseGovernanceReason::BackendRolloutDegraded
+            | SystemReleaseGovernanceReason::BackendRolloutFallbackOnly
+            | SystemReleaseGovernanceReason::IncidentOperationalHold
+            | SystemReleaseGovernanceReason::IncidentDegradedOperation
+            | SystemReleaseGovernanceReason::IncidentEscalationRequired
+            | SystemReleaseGovernanceReason::IncidentRollbackRequired
+            | SystemReleaseGovernanceReason::IncidentRollbackInEffect
+            | SystemReleaseGovernanceReason::IncidentBlocked
+    )
+}
+
+fn governance_operational_state_id(
+    state: ricercar_control::GovernanceOperationalState,
+) -> &'static str {
+    match state {
+        ricercar_control::GovernanceOperationalState::Promoted => "promoted",
+        ricercar_control::GovernanceOperationalState::Held => "held",
+        ricercar_control::GovernanceOperationalState::Degraded => "degraded",
+        ricercar_control::GovernanceOperationalState::FallbackOnly => "fallback_only",
+        ricercar_control::GovernanceOperationalState::Escalated => "escalated",
+        ricercar_control::GovernanceOperationalState::RollbackRequired => "rollback_required",
+        ricercar_control::GovernanceOperationalState::RollbackInEffect => "rollback_in_effect",
+        ricercar_control::GovernanceOperationalState::Blocked => "blocked",
+    }
 }
 
 fn governance_reason_id(reason: GovernanceReason) -> &'static str {

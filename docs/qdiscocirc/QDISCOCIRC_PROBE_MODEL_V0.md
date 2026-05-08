@@ -41,3 +41,9 @@ Q2 supports these first faithful probes:
 - show what blocked promotion, especially across compatibility, readiness, backend, layout, and CUDA promotion evidence.
 
 No Q2 walkthrough may invent new semantic status or workflow posture. It may only surface fields already present on the owned Compute or Control records.
+
+## Q3 Operator Surface
+
+Q3 finishes the protocol with stable operator question ids, canonical scenario views, and ownership-aware delta summaries. The canonical questions cover what happened, why a posture was held/degraded/fallback-only/rollback-required, what changed, what blocked promotion, which evidence justified a consequence, and which refs are Compute truth versus Control consequence.
+
+Q3 remains projection-only. It does not add a query language, policy engine, truth store, release engine, or orchestration runtime.

@@ -16,7 +16,9 @@ pub mod traces;
 
 pub use envelope::{probe_envelope, ProbeEnvelopeBuilder};
 pub use model::{
-    ProbeChange, ProbeEdge, ProbeEdgeKind, ProbeExplanation, ProbeNode, ProbeNodeRole, ProbeTrace,
+    operator_probe_question_id, probe_delta_cause_id, probe_walkthrough_kind_id,
+    OperatorProbeQuestion, OperatorProbeView, ProbeChange, ProbeDeltaCause, ProbeDeltaSummary,
+    ProbeEdge, ProbeEdgeKind, ProbeExplanation, ProbeNode, ProbeNodeRole, ProbeTrace,
     ProbeWalkthroughKind, SourcePlane,
 };
 pub use refs::SourceRef;

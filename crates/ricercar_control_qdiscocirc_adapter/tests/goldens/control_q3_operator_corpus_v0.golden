@@ -1,0 +1,66 @@
+-- clean-promotion --
+scenario|control/q3/clean-promotion
+question|what_happened
+answer|question=what_happened envelope=probe/control/release-governance/governance/qdiscocirc-clean-promotion blocked= changes=0
+compute_truth_ref|evidence/cache/fresh
+compute_truth_ref|evidence/compatibility/clean
+compute_truth_ref|evidence/release/ready
+compute_truth_ref|evidence/cuda/promote
+control_consequence_ref|governance/qdiscocirc-clean-promotion
+control_consequence_ref|routing_explanation/decision/work/qdiscocirc-clean-promotion
+probe_ref|probe/control/release-governance/governance/qdiscocirc-clean-promotion
+-- review-hold --
+scenario|control/q3/review-hold
+question|why_held
+answer|question=why_held envelope=probe/control/release-governance/governance/qdiscocirc-review-hold blocked=compute_release_needs_review,backend_rollout_hold changes=0
+compute_truth_ref|evidence/cache/fresh
+compute_truth_ref|evidence/compatibility/clean
+compute_truth_ref|evidence/release/needs-review
+compute_truth_ref|evidence/cuda/hold
+control_consequence_ref|governance/qdiscocirc-review-hold
+control_consequence_ref|routing_explanation/decision/work/qdiscocirc-review-hold
+probe_ref|probe/control/release-governance/governance/qdiscocirc-review-hold
+-- compatibility-block --
+scenario|control/q3/compatibility-block
+question|what_blocked_promotion
+answer|question=what_blocked_promotion envelope=probe/control/release-governance/governance/qdiscocirc-compatibility-block blocked=compute_compatibility_gate_blocking changes=0
+compute_truth_ref|evidence/cache/fresh
+compute_truth_ref|evidence/compatibility/blocked
+compute_truth_ref|evidence/release/ready
+compute_truth_ref|evidence/cuda/promote-blocked
+control_consequence_ref|governance/qdiscocirc-compatibility-block
+control_consequence_ref|routing_explanation/decision/work/qdiscocirc-compatibility-block
+probe_ref|probe/control/release-governance/governance/qdiscocirc-compatibility-block
+-- degraded-operation --
+scenario|control/q3/degraded-operation
+question|why_degraded
+answer|question=why_degraded envelope=probe/control/release-governance/governance/qdiscocirc-degraded-operation blocked=backend_rollout_degraded changes=0
+compute_truth_ref|evidence/cache/fresh
+compute_truth_ref|evidence/compatibility/clean
+compute_truth_ref|evidence/release/ready
+compute_truth_ref|evidence/cuda/degrade
+control_consequence_ref|governance/qdiscocirc-degraded-operation
+control_consequence_ref|routing_explanation/decision/work/qdiscocirc-degraded-operation
+probe_ref|probe/control/release-governance/governance/qdiscocirc-degraded-operation
+-- fallback-only --
+scenario|control/q3/fallback-only
+question|why_fallback_only
+answer|question=why_fallback_only envelope=probe/control/release-governance/governance/qdiscocirc-fallback-only blocked=backend_rollout_fallback_only changes=0
+compute_truth_ref|evidence/cache/fresh
+compute_truth_ref|evidence/compatibility/clean
+compute_truth_ref|evidence/release/ready
+compute_truth_ref|evidence/cuda/fallback
+control_consequence_ref|governance/qdiscocirc-fallback-only
+control_consequence_ref|routing_explanation/decision/work/qdiscocirc-fallback-only
+probe_ref|probe/control/release-governance/governance/qdiscocirc-fallback-only
+-- rollback-required --
+scenario|control/q3/rollback-required
+question|why_rollback_required
+answer|question=why_rollback_required envelope=probe/control/release-governance/governance/qdiscocirc-rollback-required blocked=incident_rollback_required changes=0
+compute_truth_ref|evidence/cache/fresh
+compute_truth_ref|evidence/compatibility/clean
+compute_truth_ref|evidence/release/ready
+compute_truth_ref|evidence/cuda/promote-rollback
+control_consequence_ref|governance/qdiscocirc-rollback-required
+control_consequence_ref|routing_explanation/decision/work/qdiscocirc-rollback-required
+probe_ref|probe/control/release-governance/governance/qdiscocirc-rollback-required
