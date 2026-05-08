@@ -1,7 +1,7 @@
 -- promoted --
 envelope|probe/control/orchestration/audit/work/qdiscocirc-promote
 title|Control routing consequence probe
-walkthrough|ShowMeWhy
+walkthrough|show_me_why
 summary|routing consequence drills down to Control explanation and Compute-owned reason ids
 node|control/command|control_truth|execution_command|command=promote_for_execution state=CommandIssued
 node|control/routing-decision|control_truth|routing_decision|intent=NormalExecution reasons=evidence_ready
@@ -13,7 +13,7 @@ node|compute/evidence/evidence/release/ready|compute_truth|admitted_or_rejected_
 -- review --
 envelope|probe/control/orchestration/audit/work/qdiscocirc-review
 title|Control routing consequence probe
-walkthrough|ShowMeWhy
+walkthrough|show_me_why
 summary|routing consequence drills down to Control explanation and Compute-owned reason ids
 node|control/command|control_truth|execution_command|command=hold_for_review state=HeldForReview
 node|control/routing-decision|control_truth|routing_decision|intent=AcceleratedExecution reasons=release_readiness_needs_review
@@ -28,7 +28,7 @@ blocked|release_readiness_needs_review
 -- blocked --
 envelope|probe/control/orchestration/audit/work/qdiscocirc-blocked
 title|Control routing consequence probe
-walkthrough|ShowMeWhy
+walkthrough|show_me_why
 summary|routing consequence drills down to Control explanation and Compute-owned reason ids
 node|control/command|control_truth|execution_command|command=escalate state=Escalated
 node|control/routing-decision|control_truth|routing_decision|intent=AcceleratedExecution reasons=release_readiness_blocked

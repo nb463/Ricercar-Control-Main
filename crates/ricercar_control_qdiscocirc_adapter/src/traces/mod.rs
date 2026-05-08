@@ -1,8 +1,8 @@
 use crate::{
     envelope::probe_envelope,
     model::{
-        ProbeChange, ProbeEdge, ProbeEdgeKind, ProbeNode, ProbeNodeRole, ProbeTrace,
-        ProbeWalkthroughKind,
+        ProbeChange, ProbeDeltaCause, ProbeDeltaSummary, ProbeEdge, ProbeEdgeKind, ProbeNode,
+        ProbeNodeRole, ProbeTrace, ProbeWalkthroughKind,
     },
     refs::SourceRef,
 };
@@ -88,4 +88,52 @@ pub fn compare_probe_envelopes(
             summary: "no workflow-policy diffing; only typed probe fields are compared".to_string(),
         })
         .build()
+}
+
+pub fn summarize_probe_delta(
+    before: &crate::envelope::ProbeEnvelope,
+    after: &crate::envelope::ProbeEnvelope,
+) -> ProbeDeltaSummary {
+    let diff = compare_probe_envelopes(before, after);
+    let changed_source_ids = diff
+        .explanation
+        .changed
+        .iter()
+        .map(|change| change.source_id.clone())
+        .collect::<Vec<_>>();
+    let mut compute_truth_refs = Vec::new();
+    let mut control_consequence_refs = Vec::new();
+    let mut saw_probe_only = false;
+
+    for source_id in &changed_source_ids {
+        let node = after
+            .nodes
+            .iter()
+            .chain(&before.nodes)
+            .find(|node| node.source.source_id == *source_id);
+        match node.map(|node| node.role) {
+            Some(ProbeNodeRole::ComputeTruth) => compute_truth_refs.push(source_id.clone()),
+            Some(ProbeNodeRole::ControlTruth) => control_consequence_refs.push(source_id.clone()),
+            Some(ProbeNodeRole::ProbeOnly) | None => saw_probe_only = true,
+        }
+    }
+
+    let cause = match (
+        compute_truth_refs.is_empty(),
+        control_consequence_refs.is_empty(),
+        saw_probe_only,
+    ) {
+        (true, true, false) => ProbeDeltaCause::NoChange,
+        (false, true, false) => ProbeDeltaCause::ComputeTruthChanged,
+        (true, false, false) => ProbeDeltaCause::ControlConsequenceChanged,
+        (true, true, true) => ProbeDeltaCause::ProbeOnlyChanged,
+        _ => ProbeDeltaCause::MixedOwnershipChanged,
+    };
+
+    ProbeDeltaSummary {
+        cause,
+        changed_source_ids,
+        compute_truth_refs,
+        control_consequence_refs,
+    }
 }
