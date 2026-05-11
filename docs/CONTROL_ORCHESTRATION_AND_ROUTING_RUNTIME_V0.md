@@ -112,6 +112,7 @@ At minimum:
 - accelerated routing is not eligible without release readiness evidence
 - accelerated routing is not eligible without clean compatibility-gate evidence
 - CUDA promotion posture drives accelerated routing: promote can execute, hold/degrade holds for review, and fallback routes away from acceleration
+- when standalone backend inadmissibility evidence coexists with typed CUDA promotion evidence on an accelerated intent, the CUDA promotion posture governs the routing consequence while backend inadmissibility remains preserved in explanation/audit evidence
 - backend runtime parity, layout, precision, or canonicalization posture remains explainable support evidence, but coarse runtime posture alone does not make acceleration eligible
 - missing or unknown evidence cannot silently become eligibility
 

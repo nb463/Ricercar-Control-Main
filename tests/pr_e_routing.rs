@@ -611,6 +611,10 @@ fn accelerated_cuda_promotion_posture_beats_standalone_backend_inadmissible() {
         .contains(&RoutingReason::BackendInadmissible));
     assert!(audit
         .routing_explanation
+        .control_reason_ids
+        .contains(&"cuda_backend_inadmissible".to_string()));
+    assert!(audit
+        .routing_explanation
         .compute_reason_ids
         .contains(&"backend_inadmissible".to_string()));
 }
